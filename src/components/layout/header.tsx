@@ -8,12 +8,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, User, Menu } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   return (
     <header className="h-16 border-b bg-white flex items-center px-6 justify-between">
-      <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden mr-2"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+      </div>
 
       <div className="flex items-center gap-4">
         <DropdownMenu>

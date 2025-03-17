@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/pagination";
 import { accountService } from "@/lib/api";
 import { ArrowUpCircle, Eye } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface Agent {
   id: string;
@@ -65,10 +65,12 @@ export default function UpgradePage() {
         page,
         limit: 10,
       });
-      setAgents(response.data.agents);
-      setTotalPages(response.data.totalPages);
+      setAgents(response.data.agents || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching eligible agents:", error);
+      setAgents([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -120,7 +122,7 @@ export default function UpgradePage() {
                     Đang tải...
                   </TableCell>
                 </TableRow>
-              ) : agents.length === 0 ? (
+              ) : !agents || agents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-10">
                     Không có đại lý nào đủ điều kiện nâng cấp

@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/pagination";
 import { accountService } from "@/lib/api";
 import { CheckCircle, XCircle, Eye } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface PendingAccount {
   id: string;
@@ -67,10 +67,12 @@ export default function ApprovePage() {
         page,
         limit: 10,
       });
-      setPendingAccounts(response.data.accounts);
-      setTotalPages(response.data.totalPages);
+      setPendingAccounts(response.data.accounts || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching pending accounts:", error);
+      setPendingAccounts([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -83,10 +85,7 @@ export default function ApprovePage() {
   const handleApprove = async (id: string) => {
     try {
       await accountService.approveAccount(id);
-      toast({
-        title: "Thành công",
-        description: "Tài khoản đã được phê duyệt",
-      });
+      toast("Tài khoản đã được phê duyệt");
       fetchPendingAccounts();
     } catch (error) {
       console.error("Error approving account:", error);
@@ -95,20 +94,13 @@ export default function ApprovePage() {
 
   const handleReject = async (id: string) => {
     if (!rejectReason.trim()) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập lý do từ chối",
-        variant: "destructive",
-      });
+      toast("Vui lòng nhập lý do từ chối");
       return;
     }
 
     try {
       await accountService.rejectAccount(id, rejectReason);
-      toast({
-        title: "Thành công",
-        description: "Tài khoản đã bị từ chối",
-      });
+      toast("Tài khoản đã bị từ chối");
       setRejectReason("");
       fetchPendingAccounts();
     } catch (error) {
@@ -142,7 +134,7 @@ export default function ApprovePage() {
                     Đang tải...
                   </TableCell>
                 </TableRow>
-              ) : pendingAccounts.length === 0 ? (
+              ) : !pendingAccounts || pendingAccounts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10">
                     Không có tài khoản nào đang chờ duyệt

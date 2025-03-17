@@ -44,6 +44,7 @@ interface Account {
   agentLevel?: 1 | 2;
   status: "active" | "inactive" | "pending";
   createdAt: string;
+  phone: string;
 }
 
 export default function AccountsPage() {
@@ -60,13 +61,13 @@ export default function AccountsPage() {
       const response = await accountService.getAccounts({
         page,
         limit: 10,
-        search,
-        type: accountType,
       });
-      setAccounts(response.data.accounts);
-      setTotalPages(response.data.totalPages);
+      setAccounts(response.data.accounts || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching accounts:", error);
+      setAccounts([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -147,23 +148,22 @@ export default function AccountsPage() {
               <TableRow>
                 <TableHead>Tên người dùng</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Họ tên</TableHead>
+                <TableHead>Số điện thoại</TableHead>
                 <TableHead>Loại tài khoản</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead>Ngày tạo</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
+                  <TableCell colSpan={6} className="text-center py-10">
                     Đang tải...
                   </TableCell>
                 </TableRow>
-              ) : accounts.length === 0 ? (
+              ) : !accounts || accounts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10">
+                  <TableCell colSpan={6} className="text-center py-10">
                     Không có dữ liệu
                   </TableCell>
                 </TableRow>
@@ -172,14 +172,11 @@ export default function AccountsPage() {
                   <TableRow key={account.id}>
                     <TableCell>{account.username}</TableCell>
                     <TableCell>{account.email}</TableCell>
-                    <TableCell>{account.fullName}</TableCell>
+                    <TableCell>{account.phone}</TableCell>
                     <TableCell>
                       {getAccountTypeBadge(account.type, account.agentLevel)}
                     </TableCell>
                     <TableCell>{getStatusBadge(account.status)}</TableCell>
-                    <TableCell>
-                      {new Date(account.createdAt).toLocaleDateString()}
-                    </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon">
                         <Edit className="h-4 w-4" />
