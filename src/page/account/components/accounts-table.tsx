@@ -1,5 +1,3 @@
-"use client";
-
 import { CardContent } from "@/components/ui/card";
 import {
   Table,

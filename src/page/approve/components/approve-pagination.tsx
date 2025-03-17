@@ -8,17 +8,17 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-interface AccountsPaginationProps {
+interface ApprovePaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-export function AccountsPagination({
+export function ApprovePagination({
   currentPage,
   totalPages,
   onPageChange,
-}: AccountsPaginationProps) {
+}: ApprovePaginationProps) {
   // Generate page numbers to display
   const getPageNumbers = () => {
     const pageNumbers = [];

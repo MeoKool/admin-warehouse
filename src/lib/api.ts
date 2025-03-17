@@ -121,16 +121,16 @@ export const accountService = {
       provinceName: data.address?.province,
       isApproved: data.status === "active",
     };
-    return api.put(`/api/auth/${id}`, apiData);
+    return api.put(`/auth/${id}`, apiData);
   },
 
   // Delete account
-  deleteAccount: (id: string) => api.delete(`/api/user/${id}`),
+  deleteAccount: (id: string) => api.delete(`/user/${id}`),
 
   // Get pending accounts for approval
   getPendingAccounts: async (params: { page?: number; limit?: number }) => {
     // Fetch all accounts and filter for pending ones if needed
-    const response = await api.get("/api/auth");
+    const response = await api.get("/auth");
 
     // Return all accounts since we don't have a specific endpoint for pending accounts
     return {
@@ -145,11 +145,11 @@ export const accountService = {
   },
 
   // Approve account
-  approveAccount: (id: string) => api.post(`/api/auth/${id}/approve`),
+  approveAccount: (id: string) => api.post(`/Request/${id}/approve`),
 
   // Reject account
   rejectAccount: (id: string, reason: string) =>
-    api.post(`/api/auth/${id}/reject`, { reason }),
+    api.post(`/auth/${id}/reject`, { reason }),
 
   // Get agents eligible for upgrade
   getUpgradeEligibleAgents: async (params: {
@@ -157,7 +157,7 @@ export const accountService = {
     limit?: number;
   }) => {
     // Fetch all accounts and filter for AGENCY type
-    const response = await api.get("/api/auth");
+    const response = await api.get("/auth");
 
     let agents = [];
 
@@ -223,7 +223,7 @@ export const accountService = {
   },
 
   // Upgrade agent level
-  upgradeAgentLevel: (id: string) => api.post(`/api/auth/agents/${id}/upgrade`),
+  upgradeAgentLevel: (id: string) => api.post(`/auth/agents/${id}/upgrade`),
 };
 
 export default api;
