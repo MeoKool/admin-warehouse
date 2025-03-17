@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -15,7 +17,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -35,19 +36,25 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { accountService } from "@/lib/api";
 import { CheckCircle, XCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
+// Updated interface to match the API response
 interface PendingAccount {
-  id: string;
+  registerId: number;
   username: string;
   email: string;
+  phone: string;
+  userType: "EMPLOYEE" | "AGENCY";
   fullName: string;
-  requestedType: "staff" | "agent";
-  requestedAgentLevel?: 1 | 2;
-  createdAt: string;
-  documents: string[];
+  position: string;
+  department: string;
+  agencyName: string;
+  street: string;
+  wardName: string;
+  districtName: string;
+  provinceName: string;
+  isApproved: boolean;
 }
 
 export default function ApprovePage() {
@@ -55,18 +62,26 @@ export default function ApprovePage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
   const [rejectReason, setRejectReason] = useState("");
 
   const fetchPendingAccounts = async () => {
     setLoading(true);
     try {
-      const response = await accountService.getPendingAccounts({
-        page,
-        limit: 10,
-      });
-      setPendingAccounts(response.data.accounts || []);
-      setTotalPages(response.data.totalPages || 1);
+      // Fetch from the /api/auth endpoint
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/auth`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Filter accounts that are not approved (if needed)
+      // In this case, we're showing all accounts since the API doesn't seem to have a specific endpoint for pending accounts
+      setPendingAccounts(Array.isArray(data) ? data : [data]);
+      setTotalPages(1); // Since we're getting all accounts at once
     } catch (error) {
       console.error("Error fetching pending accounts:", error);
       setPendingAccounts([]);
@@ -80,29 +95,56 @@ export default function ApprovePage() {
     fetchPendingAccounts();
   }, [page]);
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: number) => {
     try {
-      await accountService.approveAccount(id);
-      toast("Tài khoản đã được phê duyệt");
+      // Call your API to approve the account
+      await fetch(
+        `${
+          import.meta.env.VITE_API_URL || "http://localhost:3000"
+        }/api/auth/${id}/approve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      toast.success("Tài khoản đã được phê duyệt");
       fetchPendingAccounts();
     } catch (error) {
       console.error("Error approving account:", error);
+      toast.error("Không thể phê duyệt tài khoản");
     }
   };
 
-  const handleReject = async (id: string) => {
+  const handleReject = async (id: number) => {
     if (!rejectReason.trim()) {
-      toast("Vui lòng nhập lý do từ chối");
+      toast.error("Vui lòng nhập lý do từ chối");
       return;
     }
 
     try {
-      await accountService.rejectAccount(id, rejectReason);
-      toast("Tài khoản đã bị từ chối");
+      // Call your API to reject the account
+      await fetch(
+        `${
+          import.meta.env.VITE_API_URL || "http://localhost:3000"
+        }/api/auth/${id}/reject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ reason: rejectReason }),
+        }
+      );
+
+      toast.success("Tài khoản đã bị từ chối");
       setRejectReason("");
       fetchPendingAccounts();
     } catch (error) {
       console.error("Error rejecting account:", error);
+      toast.error("Không thể từ chối tài khoản");
     }
   };
 
@@ -120,48 +162,38 @@ export default function ApprovePage() {
                 <TableHead>Tên người dùng</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Họ tên</TableHead>
-                <TableHead>Loại yêu cầu</TableHead>
-                <TableHead>Ngày đăng ký</TableHead>
+                <TableHead>Loại tài khoản</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={5} className="text-center py-10">
                     Đang tải...
                   </TableCell>
                 </TableRow>
-              ) : !pendingAccounts || pendingAccounts.length === 0 ? (
+              ) : pendingAccounts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
+                  <TableCell colSpan={5} className="text-center py-10">
                     Không có tài khoản nào đang chờ duyệt
                   </TableCell>
                 </TableRow>
               ) : (
                 pendingAccounts.map((account) => (
-                  <TableRow key={account.id}>
+                  <TableRow key={account.registerId}>
                     <TableCell>{account.username}</TableCell>
                     <TableCell>{account.email}</TableCell>
                     <TableCell>{account.fullName}</TableCell>
                     <TableCell>
-                      {account.requestedType === "staff" ? (
-                        <Badge className="bg-purple-500">Staff</Badge>
-                      ) : account.requestedAgentLevel === 1 ? (
-                        <Badge className="bg-green-500">Đại lý cấp 1</Badge>
-                      ) : (
-                        <Badge className="bg-blue-500">Đại lý cấp 2</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(account.createdAt).toLocaleDateString()}
+                      {account.userType === "EMPLOYEE" ? "Staff" : "Agency"}
                     </TableCell>
                     <TableCell className="text-right">
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm" className="mr-2">
                             <Eye className="h-4 w-4 mr-1" />
-                            Xem
+                            Chi tiết
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px]">
@@ -198,31 +230,48 @@ export default function ApprovePage() {
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                               <span className="text-right font-medium">
-                                Loại yêu cầu:
+                                Loại tài khoản:
                               </span>
                               <span className="col-span-3">
-                                {account.requestedType === "staff"
+                                {account.userType === "EMPLOYEE"
                                   ? "Staff"
-                                  : `Đại lý cấp ${account.requestedAgentLevel}`}
+                                  : "Agency"}
                               </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                               <span className="text-right font-medium">
-                                Tài liệu:
+                                Vị trí:
                               </span>
-                              <div className="col-span-3">
-                                {account.documents.map((doc, index) => (
-                                  <a
-                                    key={index}
-                                    href={doc}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-500 hover:underline block"
-                                  >
-                                    Tài liệu {index + 1}
-                                  </a>
-                                ))}
+                              <span className="col-span-3">
+                                {account.position}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-medium">
+                                Phòng ban:
+                              </span>
+                              <span className="col-span-3">
+                                {account.department}
+                              </span>
+                            </div>
+                            {account.userType === "AGENCY" && (
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <span className="text-right font-medium">
+                                  Tên đại lý:
+                                </span>
+                                <span className="col-span-3">
+                                  {account.agencyName}
+                                </span>
                               </div>
+                            )}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-medium">
+                                Địa chỉ:
+                              </span>
+                              <span className="col-span-3">
+                                {account.street}, {account.wardName},{" "}
+                                {account.districtName}, {account.provinceName}
+                              </span>
                             </div>
                           </div>
                         </DialogContent>
@@ -232,7 +281,7 @@ export default function ApprovePage() {
                         variant="outline"
                         size="sm"
                         className="mr-2 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
-                        onClick={() => handleApprove(account.id)}
+                        onClick={() => handleApprove(account.registerId)}
                       >
                         <CheckCircle className="h-4 w-4 mr-1" />
                         Duyệt
@@ -269,7 +318,7 @@ export default function ApprovePage() {
                             </DialogClose>
                             <Button
                               variant="destructive"
-                              onClick={() => handleReject(account.id)}
+                              onClick={() => handleReject(account.registerId)}
                             >
                               Từ chối
                             </Button>

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -37,16 +39,20 @@ import { ArrowUpCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface Agent {
-  id: string;
+  id: string | number;
   username: string;
   email: string;
   fullName: string;
   agentLevel: 2; // Only level 2 agents are eligible for upgrade
   status: "active";
-  createdAt: string;
+  phone: string;
+  agencyName: string;
+  address?: {
+    province: string;
+  };
   performance: {
     salesVolume: number;
-    customerRating: number;
+    customerRating: string | number;
     monthsActive: number;
   };
 }
@@ -68,6 +74,7 @@ export default function UpgradePage() {
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching eligible agents:", error);
+      toast.error("Không thể tải danh sách đại lý");
       setAgents([]);
       setTotalPages(1);
     } finally {
@@ -79,13 +86,14 @@ export default function UpgradePage() {
     fetchEligibleAgents();
   }, [page]);
 
-  const handleUpgrade = async (id: string) => {
+  const handleUpgrade = async (id: string | number) => {
     try {
-      await accountService.upgradeAgentLevel(id);
-      toast("Đại lý đã được nâng cấp lên cấp 1");
+      await accountService.upgradeAgentLevel(id.toString());
+      toast.success("Đại lý đã được nâng cấp lên cấp 1");
       fetchEligibleAgents();
     } catch (error) {
       console.error("Error upgrading agent:", error);
+      toast.error("Không thể nâng cấp đại lý");
     }
   };
 
@@ -183,6 +191,22 @@ export default function UpgradePage() {
                                 <Badge className="bg-blue-500">
                                   Đại lý cấp 2
                                 </Badge>
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-medium">
+                                Tên đại lý:
+                              </span>
+                              <span className="col-span-3">
+                                {agent.agencyName}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-medium">
+                                Tỉnh/TP:
+                              </span>
+                              <span className="col-span-3">
+                                {agent.address?.province}
                               </span>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">

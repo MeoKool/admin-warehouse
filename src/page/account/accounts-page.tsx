@@ -1,50 +1,21 @@
 import { useState, useEffect } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Card } from "@/components/ui/card";
 import { accountService } from "@/lib/api";
-import { Edit, Trash2, Search } from "lucide-react";
+import { toast } from "sonner";
+import { AccountsHeader } from "./components/accounts-header";
+import { AccountsTable } from "./components/accounts-table";
+import { AccountsPagination } from "./components/accounts-pagination";
+import { AccountsFilter } from "./components/account-filters";
 
-interface Account {
-  id: string;
+export interface Account {
+  userId: string | number;
   username: string;
   email: string;
-  fullName: string;
-  type: "staff" | "agent";
-  agentLevel?: 1 | 2;
-  status: "active" | "inactive" | "pending";
-  createdAt: string;
+  password: string;
+  type: "EMPLOYEE" | "AGENT";
   phone: string;
+  status: boolean;
+  userType: string;
 }
 
 export default function AccountsPage() {
@@ -54,18 +25,20 @@ export default function AccountsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [accountType, setAccountType] = useState<string>("");
+  const [limit, setLimit] = useState(10);
 
   const fetchAccounts = async () => {
     setLoading(true);
     try {
       const response = await accountService.getAccounts({
         page,
-        limit: 10,
+        limit,
       });
-      setAccounts(response.data.accounts || []);
-      setTotalPages(response.data.totalPages || 1);
+      setAccounts(response.data || []);
+      setTotalPages(Math.ceil((response.total || 0) / limit) || 1);
     } catch (error) {
       console.error("Error fetching accounts:", error);
+      toast.error("Không thể tải danh sách tài khoản");
       setAccounts([]);
       setTotalPages(1);
     } finally {
@@ -75,152 +48,47 @@ export default function AccountsPage() {
 
   useEffect(() => {
     fetchAccounts();
-  }, [page, accountType]);
+  }, [page, limit, accountType]);
 
   const handleSearch = () => {
     setPage(1);
     fetchAccounts();
   };
 
-  const getAccountTypeBadge = (type: string, agentLevel?: number) => {
-    if (type === "staff") {
-      return <Badge className="bg-purple-500">Staff</Badge>;
-    } else if (type === "agent") {
-      return agentLevel === 1 ? (
-        <Badge className="bg-green-500">Đại lý cấp 1</Badge>
-      ) : (
-        <Badge className="bg-blue-500">Đại lý cấp 2</Badge>
-      );
-    }
-    return null;
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge className="bg-green-500">Active</Badge>;
-      case "inactive":
-        return <Badge className="bg-gray-500">Inactive</Badge>;
-      case "pending":
-        return <Badge className="bg-yellow-500">Pending</Badge>;
-      default:
-        return null;
+  const handleDelete = async (userId: string | number) => {
+    try {
+      await accountService.deleteAccount(userId.toString());
+      toast.success("Xóa tài khoản thành công");
+      fetchAccounts();
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Không thể xóa tài khoản");
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quản lí Account</CardTitle>
-        <CardDescription>
-          Xác nhận Account đó là Staff hay Đại lý
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex items-center gap-2 flex-1">
-            <Input
-              placeholder="Tìm kiếm theo tên, email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
-            />
-            <Button variant="outline" onClick={handleSearch}>
-              <Search className="h-4 w-4 mr-2" />
-              Tìm kiếm
-            </Button>
-          </div>
-          <Select value={accountType} onValueChange={setAccountType}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Loại tài khoản" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="staff">Staff</SelectItem>
-              <SelectItem value="agent">Đại lý</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <Card className="border-none shadow-none">
+      <AccountsHeader />
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tên người dùng</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Số điện thoại</TableHead>
-                <TableHead>Loại tài khoản</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
-                    Đang tải...
-                  </TableCell>
-                </TableRow>
-              ) : !accounts || accounts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
-                    Không có dữ liệu
-                  </TableCell>
-                </TableRow>
-              ) : (
-                accounts.map((account) => (
-                  <TableRow key={account.id}>
-                    <TableCell>{account.username}</TableCell>
-                    <TableCell>{account.email}</TableCell>
-                    <TableCell>{account.phone}</TableCell>
-                    <TableCell>
-                      {getAccountTypeBadge(account.type, account.agentLevel)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(account.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+      <AccountsFilter
+        search={search}
+        setSearch={setSearch}
+        accountType={accountType}
+        setAccountType={setAccountType}
+        onSearch={handleSearch}
+      />
 
-        <Pagination className="mt-4">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <PaginationItem key={i + 1}>
-                <PaginationLink
-                  isActive={page === i + 1}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className={
-                  page >= totalPages ? "pointer-events-none opacity-50" : ""
-                }
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </CardContent>
+      <AccountsTable
+        accounts={accounts}
+        loading={loading}
+        onDelete={handleDelete}
+      />
+
+      <AccountsPagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </Card>
   );
 }
