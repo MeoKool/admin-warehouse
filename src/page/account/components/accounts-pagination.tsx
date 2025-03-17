@@ -1,4 +1,5 @@
-import { CardFooter } from "@/components/ui/card";
+"use client";
+
 import {
   Pagination,
   PaginationContent,
@@ -70,7 +71,7 @@ export function AccountsPagination({
   };
 
   return (
-    <CardFooter className="flex justify-center pt-6">
+    <div className="flex justify-center mt-4">
       <Pagination>
         <PaginationContent>
           <PaginationItem>
@@ -118,6 +119,6 @@ export function AccountsPagination({
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-    </CardFooter>
+    </div>
   );
 }

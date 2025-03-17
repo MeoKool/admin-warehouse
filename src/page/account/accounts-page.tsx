@@ -1,46 +1,30 @@
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { accountService } from "@/lib/api";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { AccountsHeader } from "./components/accounts-header";
 import { AccountsTable } from "./components/accounts-table";
 import { AccountsPagination } from "./components/accounts-pagination";
+import accountService, { Account } from "./services/account-services";
 import { AccountsFilter } from "./components/account-filters";
-
-export interface Account {
-  userId: string | number;
-  username: string;
-  email: string;
-  password: string;
-  type: "EMPLOYEE" | "AGENT";
-  phone: string;
-  status: boolean;
-  userType: string;
-}
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [accountType, setAccountType] = useState<string>("");
-  const [limit, setLimit] = useState(10);
 
+  // Fetch all accounts at once
   const fetchAccounts = async () => {
     setLoading(true);
     try {
-      const response = await accountService.getAccounts({
-        page,
-        limit,
-      });
-      setAccounts(response.data || []);
-      setTotalPages(Math.ceil((response.total || 0) / limit) || 1);
+      const response = await accountService.getAccounts();
+      setAccounts(response.items);
+      console.log("response", response);
     } catch (error) {
       console.error("Error fetching accounts:", error);
       toast.error("Không thể tải danh sách tài khoản");
       setAccounts([]);
-      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -48,16 +32,46 @@ export default function AccountsPage() {
 
   useEffect(() => {
     fetchAccounts();
-  }, [page, limit, accountType]);
+  }, []);
 
-  const handleSearch = () => {
+  // Filter accounts based on search and accountType
+  const filteredAccounts = useMemo(() => {
+    return accounts.filter((account) => {
+      // Filter by search term (username, email, fullName, phone)
+      const searchMatch =
+        search === "" ||
+        account.username.toLowerCase().includes(search.toLowerCase()) ||
+        account.email.toLowerCase().includes(search.toLowerCase()) ||
+        (account.username &&
+          account.username.toLowerCase().includes(search.toLowerCase())) ||
+        account.phone.toLowerCase().includes(search.toLowerCase());
+
+      // Filter by account type
+      const typeMatch =
+        accountType === "ALL" ||
+        accountType === "" ||
+        account.userType === accountType;
+
+      return searchMatch && typeMatch;
+    });
+  }, [accounts, search, accountType]);
+
+  // Calculate pagination
+  const totalItems = filteredAccounts.length;
+  const totalPages = Math.ceil(totalItems / limit);
+  const paginatedAccounts = filteredAccounts.slice(
+    (page - 1) * limit,
+    page * limit
+  );
+
+  // Reset to first page when filters change
+  useEffect(() => {
     setPage(1);
-    fetchAccounts();
-  };
+  }, [search, accountType]);
 
   const handleDelete = async (userId: string | number) => {
     try {
-      await accountService.deleteAccount(userId.toString());
+      await accountService.deleteAccount(String(userId));
       toast.success("Xóa tài khoản thành công");
       fetchAccounts();
     } catch (error) {
@@ -66,8 +80,32 @@ export default function AccountsPage() {
     }
   };
 
+  const handleToggleStatus = async (
+    userId: string | number,
+    currentStatus: boolean
+  ) => {
+    try {
+      await accountService.toggleAccountStatus(String(userId), !currentStatus);
+      toast.success(
+        `Tài khoản đã được ${!currentStatus ? "kích hoạt" : "vô hiệu hóa"}`
+      );
+
+      // Update the account status locally to avoid refetching all accounts
+      setAccounts((prevAccounts) =>
+        prevAccounts.map((account) =>
+          account.userId === userId
+            ? { ...account, status: !currentStatus }
+            : account
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling account status:", error);
+      toast.error("Không thể thay đổi trạng thái tài khoản");
+    }
+  };
+
   return (
-    <Card className="border-none shadow-none">
+    <div className="space-y-4">
       <AccountsHeader />
 
       <AccountsFilter
@@ -75,20 +113,22 @@ export default function AccountsPage() {
         setSearch={setSearch}
         accountType={accountType}
         setAccountType={setAccountType}
-        onSearch={handleSearch}
       />
 
       <AccountsTable
-        accounts={accounts}
+        accounts={paginatedAccounts}
         loading={loading}
         onDelete={handleDelete}
+        onToggleStatus={handleToggleStatus}
       />
 
-      <AccountsPagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
-    </Card>
+      {totalItems > 0 && (
+        <AccountsPagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
   );
 }

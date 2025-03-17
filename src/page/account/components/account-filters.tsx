@@ -1,6 +1,4 @@
-import { CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import {
   Select,
@@ -15,7 +13,6 @@ interface AccountsFilterProps {
   setSearch: (value: string) => void;
   accountType: string;
   setAccountType: (value: string) => void;
-  onSearch: () => void;
 }
 
 export function AccountsFilter({
@@ -23,28 +20,21 @@ export function AccountsFilter({
   setSearch,
   accountType,
   setAccountType,
-  onSearch,
 }: AccountsFilterProps) {
   return (
-    <CardContent className="pb-3">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+    <div className="bg-white p-4 rounded-md border">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-2 flex-1 w-full">
           <div className="relative flex-1">
             <Input
-              placeholder="Tìm kiếm theo tên, email..."
+              placeholder="Tìm kiếm theo tên, email, số điện thoại..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pr-10"
-              onKeyDown={(e) => e.key === "Enter" && onSearch()}
+              className="pl-10 pr-4"
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-0 h-full"
-              onClick={onSearch}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+            <div className="absolute left-3 top-0 h-full flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
           </div>
         </div>
         <Select value={accountType} onValueChange={setAccountType}>
@@ -58,6 +48,6 @@ export function AccountsFilter({
           </SelectContent>
         </Select>
       </div>
-    </CardContent>
+    </div>
   );
 }
