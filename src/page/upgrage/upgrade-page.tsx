@@ -82,10 +82,7 @@ export default function UpgradePage() {
   const handleUpgrade = async (id: string) => {
     try {
       await accountService.upgradeAgentLevel(id);
-      toast({
-        title: "Thành công",
-        description: "Đại lý đã được nâng cấp lên cấp 1",
-      });
+      toast("Đại lý đã được nâng cấp lên cấp 1");
       fetchEligibleAgents();
     } catch (error) {
       console.error("Error upgrading agent:", error);
