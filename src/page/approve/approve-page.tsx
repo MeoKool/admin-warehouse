@@ -55,9 +55,7 @@ export default function ApprovePage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedAccount, setSelectedAccount] = useState<PendingAccount | null>(
-    null
-  );
+
   const [rejectReason, setRejectReason] = useState("");
 
   const fetchPendingAccounts = async () => {

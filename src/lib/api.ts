@@ -69,8 +69,16 @@ api.interceptors.response.use(
   }
 );
 
-// Helper function to transform user data from API to our application format
-const transformUserData = (user: any) => {
+interface User {
+  userId: string;
+  username: string;
+  email: string;
+  userType: "AGENCY" | "EMPLOYEE";
+  status: boolean;
+  phone?: string;
+}
+
+const transformUserData = (user: User) => {
   return {
     id: user.userId,
     username: user.username,
@@ -114,14 +122,14 @@ export const accountService = {
   },
 
   // Update account
-  updateAccount: (id: string, data: any) => {
+  updateAccount: (id: string, data: User) => {
     // Transform our application data back to API format
     const apiData = {
       username: data.username,
       email: data.email,
       phone: data.phone,
-      userType: data.type === "agent" ? "AGENCY" : "EMPLOYEE",
-      status: data.status === "active",
+      userType: data.userType,
+      status: data.status,
     };
     return api.put(`/users/${id}`, apiData);
   },
@@ -142,7 +150,7 @@ export const accountService = {
     // Transform the response to match our application's expected format
     return {
       data: {
-        accounts: response.data.items.map((user: any) => ({
+        accounts: response.data.items.map((user: User) => ({
           id: user.userId,
           username: user.username,
           email: user.email,
@@ -182,8 +190,8 @@ export const accountService = {
     return {
       data: {
         agents: response.data.items
-          .filter((user: any) => user.userType === "AGENCY")
-          .map((user: any) => ({
+          .filter((user: User) => user.userType === "AGENCY")
+          .map((user: User) => ({
             id: user.userId,
             username: user.username,
             email: user.email,
