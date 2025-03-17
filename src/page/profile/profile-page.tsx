@@ -31,29 +31,19 @@ export default function ProfilePage() {
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     // API call would go here
-    toast({
-      title: "Thành công",
-      description: "Thông tin cá nhân đã được cập nhật",
-    });
+    toast("Thông tin cá nhân đã được cập nhật");
   };
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Lỗi",
-        description: "Mật khẩu mới không khớp",
-        variant: "destructive",
-      });
+      toast("Mật khẩu mới không khớp");
       return;
     }
 
     // API call would go here
-    toast({
-      title: "Thành công",
-      description: "Mật khẩu đã được thay đổi",
-    });
+    toast("Mật khẩu đã được thay đổi");
 
     setCurrentPassword("");
     setNewPassword("");
