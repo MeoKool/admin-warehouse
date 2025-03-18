@@ -29,10 +29,10 @@ const api = axios.create({
 
 export const authService = {
   // Login user
-  login: async (username: string, password: string): Promise<LoginResponse> => {
+  login: async (userName: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await api.post("/auth/login", {
-        username,
+        userName,
         password,
       });
 

@@ -78,15 +78,21 @@ export function ApproveTable({
               <div className="text-gray-600">{account.email}</div>
               <div>{account.fullName}</div>
               <div>
-                {account.userType === "EMPLOYEE" ? (
+                {account.userType === "EMPLOYEE" &&
+                account.department === "SALES MANAGER" ? (
                   <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
-                    Staff
+                    Bán hàng
                   </span>
-                ) : (
+                ) : account.userType === "AGENCY" ? (
                   <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
                     Đại lý
                   </span>
-                )}
+                ) : account.userType === "EMPLOYEE" &&
+                  account.department === "WAREHOUSE MANAGER" ? (
+                  <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                    Quản lí kho
+                  </span>
+                ) : null}
               </div>
               <div className="flex justify-end space-x-2">
                 <AccountDetailDialog account={account}>
