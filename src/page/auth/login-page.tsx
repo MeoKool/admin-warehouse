@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,18 +35,26 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface LocationState {
-  from?: {
-    pathname: string;
-  };
-}
-
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  const from =
-    (location.state as LocationState)?.from?.pathname || "/admin/accounts";
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const sessionRole = sessionStorage.getItem("Role");
+    const localRole = localStorage.getItem("Role");
+    const userRole = sessionRole || localRole;
+
+    if (userRole) {
+      const roleNumber = Number(userRole);
+      // Redirect to appropriate dashboard based on role
+      if (roleNumber === 0) {
+        navigate("/admin");
+      } else if (roleNumber === 4) {
+        navigate("/warehouse");
+      }
+    }
+  }, [navigate]);
 
   // Initialize form with react-hook-form
   const form = useForm<FormValues>({
@@ -64,24 +72,35 @@ export default function LoginPage() {
     try {
       const response = await authService.login(data.username, data.password);
 
-      // Check if user has admin role (roleId = 0)
-      const userRole = response.token.roleId;
-
-      if (userRole === 0) {
-        // Store token in localStorage or sessionStorage based on rememberMe
-        if (data.rememberMe) {
-          localStorage.setItem("token", response.token.token);
-          localStorage.setItem("Role", userRole.toString());
-        } else {
-          sessionStorage.setItem("token", response.token.token);
-          sessionStorage.setItem("Role", userRole.toString());
-        }
-
-        toast.success("Đăng nhập thành công");
-        navigate(from);
+      // Store token and role in localStorage or sessionStorage based on rememberMe
+      if (data.rememberMe) {
+        localStorage.setItem("token", response.token.token);
+        localStorage.setItem("Role", response.token.roleId.toString());
       } else {
-        // User doesn't have admin role
+        sessionStorage.setItem("token", response.token.token);
+        sessionStorage.setItem("Role", response.token.roleId.toString());
+      }
+
+      // Redirect based on role
+      if (response.token.roleId === 0) {
+        toast.success("Đăng nhập thành công");
+        navigate("/admin");
+      } else if (response.token.roleId === 4) {
+        toast.success("Đăng nhập thành công");
+
+        navigate("/warehouse");
+      } else {
         toast.error("Tài khoản của bạn không được phép vào hệ thống");
+        // Clear storage for unauthorized roles
+        if (data.rememberMe) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("Role");
+          localStorage.removeItem("roleName");
+        } else {
+          sessionStorage.removeItem("token");
+          sessionStorage.removeItem("Role");
+          sessionStorage.removeItem("roleName");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);

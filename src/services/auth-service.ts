@@ -50,9 +50,9 @@ export const authService = {
     try {
       // Clear local storage
       localStorage.removeItem("token");
-      localStorage.removeItem("token");
+      localStorage.removeItem("Role");
       sessionStorage.removeItem("token");
-
+      sessionStorage.removeItem("Role");
       // Optional: Call logout API if needed
       // await api.post("/auth/logout")
     } catch (error) {

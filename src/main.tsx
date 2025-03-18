@@ -10,6 +10,11 @@ import ProfilePage from "./page/profile/profile-page";
 import { Toaster } from "./components/ui/sonner";
 import LoginPage from "./page/auth/login-page";
 import NotFoundPage from "./page/not-found/not-found-page";
+import ExportPage from "./page/ware-house/export/export-page";
+import ImportPage from "./page/ware-house/import/import-page";
+import WarehouseProfile from "./page/ware-house/proflie/warehouse-profile";
+import WarehouseDashboard from "./page/ware-house/dashboard/warehouse-dashboard";
+import { WarehouseLayout } from "./components/layout/warehouse-layout";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -27,6 +32,22 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="profile" element={<ProfilePage />} />
 
             {/* 404 for non-existent admin routes */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Route>
+
+        {/* Protected Warehouse Routes */}
+        <Route element={<ProtectedRoute allowedRoles={[4]} />}>
+          <Route path="/warehouse" element={<WarehouseLayout />}>
+            <Route
+              index
+              element={<Navigate to="/warehouse/dashboard" replace />}
+            />
+            <Route path="dashboard" element={<WarehouseDashboard />} />
+            <Route path="export" element={<ExportPage />} />
+            <Route path="import" element={<ImportPage />} />
+            <Route path="profile" element={<WarehouseProfile />} />
+            {/* 404 for non-existent warehouse routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>

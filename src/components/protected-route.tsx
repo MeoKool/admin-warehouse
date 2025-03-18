@@ -12,7 +12,6 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const sessionRole = sessionStorage.getItem("Role");
   const localRole = localStorage.getItem("Role");
   const userRole = sessionRole || localRole;
-
   // Check if user is authenticated and has the required role
   const isAuthorized =
     userRole !== null && allowedRoles.includes(Number(userRole));
