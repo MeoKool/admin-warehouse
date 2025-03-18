@@ -86,7 +86,7 @@ export function AccountsTable({
               <div>
                 {account.userType === "EMPLOYEE" ? (
                   <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
-                    Staff
+                    Nhân viên
                   </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">

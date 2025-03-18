@@ -77,7 +77,9 @@ export function AccountDetailDialog({
             <div className="text-right font-medium text-gray-500">
               Loại tài khoản:
             </div>
-            <div>{account.userType === "EMPLOYEE" ? "Staff" : "Đại lý"}</div>
+            <div>
+              {account.userType === "EMPLOYEE" ? "Nhân viên" : "Đại lý"}
+            </div>
           </div>
 
           <div className="grid grid-cols-[120px_1fr] gap-2">

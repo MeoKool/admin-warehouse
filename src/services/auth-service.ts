@@ -14,8 +14,10 @@ export interface User {
 
 // Interface for login response
 export interface LoginResponse {
-  token: string;
-  user?: User;
+  token: {
+    token: string;
+    roleId: number;
+  };
 }
 
 // Create axios instance with base configuration
@@ -47,9 +49,9 @@ export const authService = {
   logout: async (): Promise<void> => {
     try {
       // Clear local storage
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_info");
-      sessionStorage.removeItem("auth_token");
+      localStorage.removeItem("token");
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
 
       // Optional: Call logout API if needed
       // await api.post("/auth/logout")
@@ -62,8 +64,7 @@ export const authService = {
   // Check if user is authenticated
   isAuthenticated: (): boolean => {
     const token =
-      localStorage.getItem("auth_token") ||
-      sessionStorage.getItem("auth_token");
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     return !!token;
   },
 
@@ -75,9 +76,7 @@ export const authService = {
 
   // Get auth token
   getToken: (): string | null => {
-    return (
-      localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token")
-    );
+    return localStorage.getItem("token") || sessionStorage.getItem("token");
   },
 };
 

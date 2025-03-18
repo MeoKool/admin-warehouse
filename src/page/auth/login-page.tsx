@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,9 +35,18 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+interface LocationState {
+  from?: {
+    pathname: string;
+  };
+}
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from =
+    (location.state as LocationState)?.from?.pathname || "/admin/accounts";
 
   // Initialize form with react-hook-form
   const form = useForm<FormValues>({
@@ -55,20 +64,25 @@ export default function LoginPage() {
     try {
       const response = await authService.login(data.username, data.password);
 
-      // Store token in localStorage or sessionStorage based on rememberMe
-      if (data.rememberMe) {
-        localStorage.setItem("auth_token", response.token);
+      // Check if user has admin role (roleId = 0)
+      const userRole = response.token.roleId;
+
+      if (userRole === 0) {
+        // Store token in localStorage or sessionStorage based on rememberMe
+        if (data.rememberMe) {
+          localStorage.setItem("token", response.token.token);
+          localStorage.setItem("Role", userRole.toString());
+        } else {
+          sessionStorage.setItem("token", response.token.token);
+          sessionStorage.setItem("Role", userRole.toString());
+        }
+
+        toast.success("Đăng nhập thành công");
+        navigate(from);
       } else {
-        sessionStorage.setItem("auth_token", response.token);
+        // User doesn't have admin role
+        toast.error("Tài khoản của bạn không được phép vào hệ thống");
       }
-
-      // Store user info if available
-      if (response.user) {
-        localStorage.setItem("user_info", JSON.stringify(response.user));
-      }
-
-      toast.success("Đăng nhập thành công");
-      navigate("/admin/accounts");
     } catch (error) {
       console.error("Login error:", error);
       toast.error(

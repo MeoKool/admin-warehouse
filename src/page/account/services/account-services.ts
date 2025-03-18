@@ -66,8 +66,6 @@ export const accountService = {
         params: {
           page: params.page || 1,
           limit: params.limit || 100, // Get more items to handle client-side filtering
-          search: params.search || "",
-          type: params.type || "",
         },
       });
 
