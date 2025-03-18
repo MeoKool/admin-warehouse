@@ -11,6 +11,12 @@ export interface Account {
   userType: "EMPLOYEE" | "AGENT"; // Type of user
   phone: string; // Phone number
   status: boolean; // Active or inactive status
+  fullName: string;
+  agencyName: string;
+  street: string;
+  wardName: string;
+  districtName: string;
+  provinceName: string;
 }
 
 // Interface for paginated account response
@@ -39,18 +45,18 @@ const api = axios.create({
 });
 
 // Add request interceptor for auth token
-// api.interceptors.request.use(
-//   (config) => {
-//     const token = localStorage.getItem("auth_token");
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     return config;
-//   },
-//   (error) => {
-//     return Promise.reject(error);
-//   }
-// );
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const accountService = {
   // Get paginated accounts
@@ -59,18 +65,30 @@ export const accountService = {
       const response = await api.get("/user", {
         params: {
           page: params.page || 1,
-          limit: params.limit || 10,
+          limit: params.limit || 100, // Get more items to handle client-side filtering
           search: params.search || "",
           type: params.type || "",
         },
       });
 
-      return {
-        items: response.data.items || [],
-        totalItems: response.data.totalItems || 0,
-        totalPages: response.data.totalPages || 1,
-        currentPage: response.data.currentPage || 1,
-      };
+      // Handle different response formats
+      if (response.data.items) {
+        return response.data;
+      } else if (Array.isArray(response.data)) {
+        return {
+          items: response.data,
+          totalItems: response.data.length,
+          totalPages: 1,
+          currentPage: 1,
+        };
+      } else {
+        return {
+          items: [],
+          totalItems: 0,
+          totalPages: 0,
+          currentPage: 1,
+        };
+      }
     } catch (error) {
       console.error("Error fetching accounts:", error);
       throw error;

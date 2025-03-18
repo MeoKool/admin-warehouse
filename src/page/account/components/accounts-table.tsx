@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +25,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Account } from "../services/account-services";
+import type { Account } from "../services/account-services";
 
 interface AccountsTableProps {
   accounts: Account[];
   loading: boolean;
   onDelete: (userId: string | number) => void;
   onToggleStatus: (userId: string | number, currentStatus: boolean) => void;
+  onEdit: (account: Account) => void;
 }
 
 export function AccountsTable({
@@ -37,6 +40,7 @@ export function AccountsTable({
   loading,
   onDelete,
   onToggleStatus,
+  onEdit,
 }: AccountsTableProps) {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
@@ -109,7 +113,10 @@ export function AccountsTable({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="flex items-center cursor-pointer">
+                    <DropdownMenuItem
+                      className="flex items-center cursor-pointer"
+                      onClick={() => onEdit(account)}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Chỉnh sửa
                     </DropdownMenuItem>

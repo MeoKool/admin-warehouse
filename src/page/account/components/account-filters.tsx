@@ -43,8 +43,8 @@ export function AccountsFilter({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">Tất cả</SelectItem>
-            <SelectItem value="EMPLOYEE">Staff</SelectItem>
-            <SelectItem value="AGENT">Đại lý</SelectItem>
+            <SelectItem value="EMPLOYEE">Nhân viên</SelectItem>
+            <SelectItem value="AGENCY">Đại lý</SelectItem>
           </SelectContent>
         </Select>
       </div>

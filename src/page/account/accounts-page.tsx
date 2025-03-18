@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { AccountsHeader } from "./components/accounts-header";
 import { AccountsTable } from "./components/accounts-table";
 import { AccountsPagination } from "./components/accounts-pagination";
-import accountService, { Account } from "./services/account-services";
+import accountService, { type Account } from "./services/account-services";
+import { EditAccountDialog } from "./components/edit-account-dialog";
 import { AccountsFilter } from "./components/account-filters";
 
 export default function AccountsPage() {
@@ -13,13 +14,15 @@ export default function AccountsPage() {
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [accountType, setAccountType] = useState<string>("");
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Fetch all accounts at once
   const fetchAccounts = async () => {
     setLoading(true);
     try {
       const response = await accountService.getAccounts();
-      setAccounts(response.items);
+      setAccounts(response.items || []);
       console.log("response", response);
     } catch (error) {
       console.error("Error fetching accounts:", error);
@@ -37,14 +40,14 @@ export default function AccountsPage() {
   // Filter accounts based on search and accountType
   const filteredAccounts = useMemo(() => {
     return accounts.filter((account) => {
-      // Filter by search term (username, email, fullName, phone)
+      // Filter by search term (username, email, phone)
+      const searchLower = search.toLowerCase();
       const searchMatch =
         search === "" ||
-        account.username.toLowerCase().includes(search.toLowerCase()) ||
-        account.email.toLowerCase().includes(search.toLowerCase()) ||
         (account.username &&
-          account.username.toLowerCase().includes(search.toLowerCase())) ||
-        account.phone.toLowerCase().includes(search.toLowerCase());
+          account.username.toLowerCase().includes(searchLower)) ||
+        (account.email && account.email.toLowerCase().includes(searchLower)) ||
+        (account.phone && account.phone.toLowerCase().includes(searchLower));
 
       // Filter by account type
       const typeMatch =
@@ -58,7 +61,7 @@ export default function AccountsPage() {
 
   // Calculate pagination
   const totalItems = filteredAccounts.length;
-  const totalPages = Math.ceil(totalItems / limit);
+  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
   const paginatedAccounts = filteredAccounts.slice(
     (page - 1) * limit,
     page * limit
@@ -104,6 +107,27 @@ export default function AccountsPage() {
     }
   };
 
+  const handleEdit = (account: Account) => {
+    setEditingAccount(account);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (accountId: string, data: Partial<Account>) => {
+    try {
+      await accountService.updateAccount(accountId, data);
+
+      // Update the account locally
+      setAccounts((prevAccounts) =>
+        prevAccounts.map((account) =>
+          account.userId === accountId ? { ...account, ...data } : account
+        )
+      );
+    } catch (error) {
+      console.error("Error updating account:", error);
+      throw error; // Re-throw to be handled by the dialog
+    }
+  };
+
   return (
     <div className="space-y-4">
       <AccountsHeader />
@@ -120,6 +144,7 @@ export default function AccountsPage() {
         loading={loading}
         onDelete={handleDelete}
         onToggleStatus={handleToggleStatus}
+        onEdit={handleEdit}
       />
 
       {totalItems > 0 && (
@@ -129,6 +154,13 @@ export default function AccountsPage() {
           onPageChange={setPage}
         />
       )}
+
+      <EditAccountDialog
+        account={editingAccount}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }

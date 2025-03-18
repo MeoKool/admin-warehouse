@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import {
   Users,
   CheckSquare,
-  ArrowUpCircle,
   User,
   ChevronLeft,
   ChevronRight,
@@ -22,11 +21,6 @@ const menuItems = [
     title: "Xét duyệt Account",
     path: "/admin/approve",
     icon: <CheckSquare className="h-5 w-5" />,
-  },
-  {
-    title: "Chuyển cấp Đại lý",
-    path: "/admin/upgrade",
-    icon: <ArrowUpCircle className="h-5 w-5" />,
   },
   {
     title: "Profile",
