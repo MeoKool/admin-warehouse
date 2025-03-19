@@ -24,7 +24,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/login" element={<LoginPage />} />
 
         {/* Protected Admin Routes */}
-        <Route element={<ProtectedRoute allowedRoles={[0]} />}>
+        <Route element={<ProtectedRoute allowedRoles={[1]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/accounts" replace />} />
             <Route path="accounts" element={<AccountsPage />} />
