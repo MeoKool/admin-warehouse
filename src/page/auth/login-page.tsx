@@ -82,10 +82,10 @@ export default function LoginPage() {
       }
 
       // Redirect based on role
-      if (response.token.roleId === 0) {
+      if (response.token.roleId === 1) {
         toast.success("Đăng nhập thành công");
         navigate("/admin");
-      } else if (response.token.roleId === 4) {
+      } else if (response.token.roleId === 3) {
         toast.success("Đăng nhập thành công");
 
         navigate("/warehouse");

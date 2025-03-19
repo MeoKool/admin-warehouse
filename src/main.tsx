@@ -37,7 +37,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </Route>
 
         {/* Protected Warehouse Routes */}
-        <Route element={<ProtectedRoute allowedRoles={[4]} />}>
+        <Route element={<ProtectedRoute allowedRoles={[3]} />}>
           <Route path="/warehouse" element={<WarehouseLayout />}>
             <Route
               index

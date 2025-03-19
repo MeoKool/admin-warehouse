@@ -1,5 +1,3 @@
-"use client";
-
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -102,14 +100,6 @@ export function WarehouseSidebar({ collapsed = false }: WarehouseSidebarProps) {
           </Link>
         ))}
       </nav>
-
-      <div className="mt-auto pt-4 border-t border-slate-700">
-        {!isCollapsed && (
-          <div className="text-xs text-slate-400 mb-2">
-            Warehouse Manager v1.0
-          </div>
-        )}
-      </div>
     </div>
   );
 }

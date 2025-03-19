@@ -224,7 +224,6 @@ export function EditAccountDialog({
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                           value={field.value}
-                          disabled={!!account}
                         >
                           <FormControl>
                             <SelectTrigger>
