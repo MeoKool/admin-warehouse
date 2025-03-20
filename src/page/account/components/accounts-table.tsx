@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { Edit, MoreHorizontal, CheckCircle, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,10 +37,6 @@ export function AccountsTable({
   onEdit,
 }: AccountsTableProps) {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
-
-  const handleDeleteClick = (account: Account) => {
-    setAccountToDelete(account);
-  };
 
   const confirmDelete = () => {
     if (accountToDelete) {
@@ -121,7 +111,7 @@ export function AccountsTable({
                       Chỉnh sửa
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="flex items-center cursor-pointer"
+                      className="flex items-center  text-red-600 cursor-pointer"
                       onClick={() =>
                         onToggleStatus(account.userId, account.status)
                       }
@@ -137,13 +127,6 @@ export function AccountsTable({
                           Kích hoạt
                         </>
                       )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="flex items-center text-red-600 cursor-pointer"
-                      onClick={() => handleDeleteClick(account)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Xóa
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
