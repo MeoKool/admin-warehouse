@@ -19,6 +19,7 @@ export interface PendingAccount {
   districtName: string;
   provinceName: string;
   isApproved: boolean;
+  accountRegisterStatus: string;
 }
 
 export default function ApprovePage() {
@@ -32,7 +33,7 @@ export default function ApprovePage() {
 
       // Filter accounts that are not approved
       const notApprovedAccounts = response.filter(
-        (account) => !account.isApproved
+        (account) => account.accountRegisterStatus === "Pending"
       );
 
       setPendingAccounts(notApprovedAccounts);
@@ -53,17 +54,17 @@ export default function ApprovePage() {
     try {
       await approveService.approveAccount(id);
       toast.success("Tài khoản đã được phê duyệt");
-      fetchPendingAccounts(); // Re-fetch accounts after approval
+      fetchPendingAccounts();
     } catch (error) {
       console.error("Error approving account:", error);
       toast.error("Không thể phê duyệt tài khoản");
     }
   };
 
-  const handleReject = async (id: number, reason: string) => {
+  const handleReject = async (id: number) => {
     try {
-      await approveService.rejectAccount(id, reason);
-      toast.success("Tài khoản đã bị từ chối");
+      await approveService.rejectAccount(id);
+      toast.error("Tài khoản đã bị từ chối");
       fetchPendingAccounts(); // Re-fetch accounts after rejection
     } catch (error) {
       console.error("Error rejecting account:", error);

@@ -35,6 +35,11 @@ export interface AccountParams {
   type?: string; // Filter by user type
 }
 
+export interface AccountStatusResponse {
+  success: boolean; // Status of the operation
+  message: string; // Message from the server
+}
+
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_URL,
@@ -140,14 +145,9 @@ export const accountService = {
   },
 
   // Toggle account status (activate/deactivate)
-  toggleAccountStatus: async (
-    id: string,
-    active: boolean
-  ): Promise<Account> => {
+  toggleAccountStatus: async (id: string): Promise<AccountStatusResponse> => {
     try {
-      const response = await api.patch(`/user/${id}/status`, {
-        status: active,
-      });
+      const response = await api.put(`/${id}/UnActive`);
       return response.data;
     } catch (error) {
       console.error(`Error toggling status for account with ID ${id}:`, error);

@@ -49,9 +49,9 @@ export const approveService = {
   },
 
   // Reject an account
-  rejectAccount: async (id: number, reason: string): Promise<void> => {
+  rejectAccount: async (id: number): Promise<void> => {
     try {
-      await api.post(`/auth/${id}/reject`, { reason });
+      await api.put(`/${id}/cancel`);
     } catch (error) {
       console.error("Error rejecting account:", error);
       throw error;

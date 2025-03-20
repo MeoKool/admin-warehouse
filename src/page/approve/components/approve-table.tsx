@@ -1,25 +1,23 @@
+"use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Eye, CheckCircle2, XCircle } from "lucide-react";
 import type { PendingAccount } from "../approve-page";
 import { AccountDetailDialog } from "./account-detail-dialog";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 
 interface ApproveTableProps {
   accounts: PendingAccount[];
   loading: boolean;
   onApprove: (id: number) => void;
-  onReject: (id: number, reason: string) => void;
+  onReject: (id: number) => void; // Removed reason parameter
 }
 
 export function ApproveTable({
@@ -28,23 +26,20 @@ export function ApproveTable({
   onApprove,
   onReject,
 }: ApproveTableProps) {
-  const [rejectReason, setRejectReason] = useState("");
-  const [selectedAccount, setSelectedAccount] = useState<PendingAccount | null>(
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
     null
   );
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
-  const handleRejectClick = (account: PendingAccount) => {
-    setSelectedAccount(account);
-    setRejectReason("");
+  const handleRejectClick = (id: number) => {
+    setSelectedAccountId(id);
+    setIsRejectDialogOpen(true);
   };
 
-  const handleRejectSubmit = () => {
-    if (!rejectReason.trim()) {
-      return;
-    }
-
-    if (selectedAccount) {
-      onReject(selectedAccount.registerId, rejectReason);
+  const handleConfirmReject = () => {
+    if (selectedAccountId !== null) {
+      onReject(selectedAccountId);
+      setIsRejectDialogOpen(false);
     }
   };
 
@@ -116,52 +111,41 @@ export function ApproveTable({
                   Duyệt
                 </Button>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-2 text-red-700 bg-red-50 hover:bg-red-100 hover:text-red-800 border-red-200"
-                      onClick={() => handleRejectClick(account)}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Từ chối
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Từ chối tài khoản</DialogTitle>
-                      <DialogDescription>
-                        Vui lòng nhập lý do từ chối tài khoản này
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <Textarea
-                        placeholder="Lý do từ chối..."
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        className="min-h-[100px]"
-                      />
-                    </div>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button variant="outline">Hủy</Button>
-                      </DialogClose>
-                      <Button
-                        variant="destructive"
-                        onClick={handleRejectSubmit}
-                        disabled={!rejectReason.trim()}
-                      >
-                        Từ chối
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2 text-red-700 bg-red-50 hover:bg-red-100 hover:text-red-800 border-red-200"
+                  onClick={() => handleRejectClick(account.registerId)}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Từ chối
+                </Button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Separate Dialog for rejection confirmation */}
+      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Xác nhận từ chối</DialogTitle>
+          </DialogHeader>
+          <p className="py-4">Bạn có chắc chắn muốn từ chối tài khoản này?</p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsRejectDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmReject}>
+              Từ chối
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
