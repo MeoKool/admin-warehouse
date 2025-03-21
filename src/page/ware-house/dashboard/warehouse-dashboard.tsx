@@ -25,7 +25,10 @@ export default function WarehouseDashboard() {
       try {
         // Removed unused setIsLoadingWarehouse call
         const data = await warehouseService.getWarehouse();
-
+        console.log("Warehouse data:", data);
+        if (data?.warehouseId !== undefined) {
+          sessionStorage.setItem("warehouseId", data.warehouseId.toString());
+        }
         // Nếu có dữ liệu và có đối tượng address
         if (data && data.address) {
           // Cần lấy tên địa chỉ từ ID trong đối tượng address

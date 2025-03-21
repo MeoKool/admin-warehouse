@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,56 +21,124 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import axios from "axios";
+
+// Định nghĩa các interface
+interface Product {
+  productId: number;
+  productCode: string;
+  productName: string;
+  unit: string;
+  defaultExpiration: number;
+  categoryId: number;
+  description: string;
+  taxId: number;
+  availableStock: number;
+  images: string[];
+}
+
+interface ImportItem {
+  productId: number;
+  productName: string;
+  productCode: string;
+  unit: string;
+  quantity: number;
+  unitCost: number;
+  DateOfManufacture: string;
+  total: number;
+}
 
 interface ImportFormProps {
   onClose: () => void;
 }
 
-// Mock data for products
-const mockProducts = [
-  { id: "SP001", name: "Sản phẩm 1", unit: "Cái", price: 80000 },
-  { id: "SP002", name: "Sản phẩm 2", unit: "Hộp", price: 150000 },
-  { id: "SP003", name: "Sản phẩm 3", unit: "Thùng", price: 400000 },
-  { id: "SP004", name: "Sản phẩm 4", unit: "Cái", price: 120000 },
-  { id: "SP005", name: "Sản phẩm 5", unit: "Hộp", price: 250000 },
-];
+// Các loại đơn vị được phép
+const ALLOWED_UNITS = ["Chai", "Bao"];
 
-// Mock data for warehouses
-const mockWarehouses = [
-  { id: "KHO001", name: "Kho Hà Nội" },
-  { id: "KHO002", name: "Kho Hồ Chí Minh" },
-  { id: "KHO003", name: "Kho Đà Nẵng" },
-];
-
-// Mock data for suppliers
-const mockSuppliers = [
-  { id: "NCC001", name: "Công ty A" },
-  { id: "NCC002", name: "Công ty B" },
-  { id: "NCC003", name: "Công ty C" },
+// Các loại nhập kho
+const IMPORT_TYPES = [
+  "Nhập Sản Xuất",
+  "Nhập Mua Hàng",
+  "Nhập Trả Hàng",
+  "Nhập Kiểm Kê",
+  "Nhập Khác",
 ];
 
 export function ImportForm({ onClose }: ImportFormProps) {
   const [formData, setFormData] = useState({
+    documentNumber: `IMP-${format(new Date(), "yyyyMMdd")}-001`,
     importDate: new Date().toISOString().split("T")[0],
     warehouseId: "",
-    supplierId: "",
-    invoiceNumber: "",
+    importType: "Nhập Sản Xuất",
+    supplier: "",
     note: "",
   });
 
-  const [items, setItems] = useState<
-    Array<{
-      productId: string;
-      productName: string;
-      quantity: number;
-      unit: string;
-      price: number;
-      batchCode: string;
-      total: number;
-    }>
-  >([]);
+  const [items, setItems] = useState<ImportItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const token = sessionStorage.getItem("token");
+  const warehouseId = sessionStorage.getItem("warehouseId");
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+  // Set warehouse ID from session storage
+  useEffect(() => {
+    if (warehouseId) {
+      setFormData((prev) => ({
+        ...prev,
+        warehouseId: warehouseId,
+      }));
+    }
+  }, [warehouseId]);
+
+  // Fetch products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoadingProducts(true);
+      try {
+        const response = await axios.get(`${API_URL}product`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          setProducts(Array.isArray(response.data) ? response.data : []);
+        } else {
+          throw new Error("Failed to fetch products");
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast.error("Không thể tải danh sách sản phẩm");
+        setProducts([]);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, [API_URL, token]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -87,12 +155,13 @@ export function ImportForm({ onClose }: ImportFormProps) {
     setItems((prev) => [
       ...prev,
       {
-        productId: "",
+        productId: 0,
         productName: "",
-        quantity: 1,
+        productCode: "",
         unit: "",
-        price: 0,
-        batchCode: "",
+        quantity: 1,
+        unitCost: 0,
+        DateOfManufacture: format(new Date(), "yyyy-MM-dd"),
         total: 0,
       },
     ]);
@@ -102,26 +171,19 @@ export function ImportForm({ onClose }: ImportFormProps) {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: string, value: any) => {
+  const updateItem = (index: number, field: string, value: string | number) => {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i === index) {
           const updatedItem = { ...item, [field]: value };
 
-          // If product ID changed, update product details
-          if (field === "productId" && value) {
-            const product = mockProducts.find((p) => p.id === value);
-            if (product) {
-              updatedItem.productName = product.name;
-              updatedItem.unit = product.unit;
-              updatedItem.price = product.price;
-              updatedItem.total = updatedItem.quantity * product.price;
-            }
-          }
-
-          // If quantity or price changed, update total
-          if (field === "quantity" || field === "price") {
-            updatedItem.total = updatedItem.price * updatedItem.quantity;
+          // If quantity or unitCost changed, update total
+          if (field === "quantity" || field === "unitCost") {
+            // Giới hạn giá trị tổng để tránh tràn số
+            updatedItem.total = Math.min(
+              updatedItem.quantity * updatedItem.unitCost,
+              999999999999
+            );
           }
 
           return updatedItem;
@@ -131,15 +193,36 @@ export function ImportForm({ onClose }: ImportFormProps) {
     );
   };
 
+  const selectProduct = (index: number, productId: number) => {
+    const product = products.find((p) => p.productId === productId);
+    if (product) {
+      setItems((prev) =>
+        prev.map((item, i) => {
+          if (i === index) {
+            return {
+              ...item,
+              productId: product.productId,
+              productName: product.productName,
+              productCode: product.productCode,
+              unit: product.unit,
+              total: item.quantity * item.unitCost,
+            };
+          }
+          return item;
+        })
+      );
+    }
+  };
+
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + item.total, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate form
-    if (!formData.warehouseId || !formData.supplierId || items.length === 0) {
+    if (!formData.warehouseId || !formData.supplier || items.length === 0) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
@@ -153,232 +236,394 @@ export function ImportForm({ onClose }: ImportFormProps) {
       return;
     }
 
-    // Submit form data
-    console.log("Form data:", { ...formData, items });
-    toast.success("Tạo phiếu nhập thành công");
-    onClose();
+    setIsLoading(true);
+    try {
+      // Prepare data for API
+      const importData = {
+        documentNumber: formData.documentNumber,
+        warehouseId: Number.parseInt(formData.warehouseId),
+        importType: formData.importType,
+        supplier: formData.supplier,
+        note: formData.note,
+        batches: items.map((item) => ({
+          productId: item.productId,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitCost: item.unitCost,
+          DateOfManufacture: item.DateOfManufacture,
+        })),
+      };
+
+      // Call API to create import
+      const response = await axios.post(
+        `${API_URL}WarehouseReceipt/create`,
+        importData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Tạo phiếu nhập thành công");
+        onClose();
+      } else {
+        throw new Error("Failed to create import");
+      }
+    } catch (error) {
+      console.error("Error creating import:", error);
+      toast.error("Không thể tạo phiếu nhập");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Filter products based on search term
+  const filteredProducts =
+    searchTerm.trim() === ""
+      ? products
+      : products.filter(
+          (product) =>
+            product.productName
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            product.productCode.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid gap-6 py-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="importDate">
-              Ngày nhập <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="importDate"
-              name="importDate"
-              type="date"
-              value={formData.importDate}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="invoiceNumber">Số hóa đơn</Label>
-            <Input
-              id="invoiceNumber"
-              name="invoiceNumber"
-              placeholder="Nhập số hóa đơn (nếu có)"
-              value={formData.invoiceNumber}
-              onChange={handleInputChange}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="warehouseId">
-              Kho nhập hàng <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={formData.warehouseId}
-              onValueChange={(value) =>
-                handleSelectChange("warehouseId", value)
-              }
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn kho nhập hàng" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockWarehouses.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="supplierId">
-              Nhà cung cấp <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={formData.supplierId}
-              onValueChange={(value) => handleSelectChange("supplierId", value)}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhà cung cấp" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockSuppliers.map((supplier) => (
-                  <SelectItem key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label>
-              Danh sách sản phẩm <span className="text-red-500">*</span>
-            </Label>
-            <Button type="button" variant="outline" size="sm" onClick={addItem}>
-              <Plus className="h-4 w-4 mr-1" />
-              Thêm sản phẩm
-            </Button>
-          </div>
-
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sản phẩm</TableHead>
-                  <TableHead>Mã lô hàng</TableHead>
-                  <TableHead>Số lượng</TableHead>
-                  <TableHead>Đơn vị</TableHead>
-                  <TableHead>Đơn giá</TableHead>
-                  <TableHead>Thành tiền</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center h-24 text-muted-foreground"
-                    >
-                      Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để bắt đầu.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Select
-                          value={item.productId}
-                          onValueChange={(value) =>
-                            updateItem(index, "productId", value)
-                          }
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Chọn sản phẩm" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {mockProducts.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          placeholder="Mã lô"
-                          value={item.batchCode}
-                          onChange={(e) =>
-                            updateItem(index, "batchCode", e.target.value)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateItem(
-                              index,
-                              "quantity",
-                              Number.parseInt(e.target.value) || 0
-                            )
-                          }
-                          className="w-[80px]"
-                        />
-                      </TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={item.price}
-                          onChange={(e) =>
-                            updateItem(
-                              index,
-                              "price",
-                              Number.parseInt(e.target.value) || 0
-                            )
-                          }
-                          className="w-[100px]"
-                        />
-                      </TableCell>
-                      <TableCell>{item.total.toLocaleString()} đ</TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeItem(index)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-                {items.length > 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-right font-medium">
-                      Tổng cộng:
-                    </TableCell>
-                    <TableCell className="font-bold">
-                      {calculateTotal().toLocaleString()} đ
-                    </TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="note">Ghi chú</Label>
-          <Textarea
-            id="note"
-            name="note"
-            placeholder="Nhập ghi chú (nếu có)"
-            value={formData.note}
+          <Label htmlFor="documentNumber">
+            Mã phiếu nhập <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="documentNumber"
+            name="documentNumber"
+            value={formData.documentNumber}
             onChange={handleInputChange}
-            className="min-h-[80px]"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="importDate">
+            Ngày nhập <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="importDate"
+            name="importDate"
+            type="date"
+            value={formData.importDate}
+            onChange={handleInputChange}
+            required
           />
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="importType">
+            Loại nhập <span className="text-red-500">*</span>
+          </Label>
+          <Select
+            value={formData.importType}
+            onValueChange={(value) => handleSelectChange("importType", value)}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn loại nhập" />
+            </SelectTrigger>
+            <SelectContent>
+              {IMPORT_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="supplier">
+            Nhà cung cấp <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="supplier"
+            name="supplier"
+            placeholder="Nhập tên nhà cung cấp"
+            value={formData.supplier}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label>
+            Danh sách sản phẩm <span className="text-red-500">*</span>
+          </Label>
+          <Button type="button" variant="outline" size="sm" onClick={addItem}>
+            <Plus className="h-4 w-4 mr-1" />
+            Thêm sản phẩm
+          </Button>
+        </div>
+
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Sản phẩm</TableHead>
+                <TableHead>Đơn vị</TableHead>
+                <TableHead>Số lượng</TableHead>
+                <TableHead>Đơn giá</TableHead>
+                <TableHead>Ngày sản xuất</TableHead>
+                <TableHead>Thành tiền</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center h-24 text-muted-foreground"
+                  >
+                    Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để bắt đầu.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                            disabled={isLoadingProducts}
+                          >
+                            {isLoadingProducts ? (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+                                <span>Đang tải...</span>
+                              </div>
+                            ) : item.productName ? (
+                              <div className="flex flex-col">
+                                <span>{item.productName}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {item.productCode}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                Chọn sản phẩm
+                              </span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="p-0"
+                          align="start"
+                          side="bottom"
+                        >
+                          <Command>
+                            <CommandInput
+                              placeholder="Tìm sản phẩm..."
+                              value={searchTerm}
+                              onValueChange={setSearchTerm}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                Không tìm thấy sản phẩm
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {filteredProducts.map((product) => (
+                                  <CommandItem
+                                    key={product.productId}
+                                    value={product.productName}
+                                    onSelect={() => {
+                                      selectProduct(index, product.productId);
+                                      setSearchTerm("");
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span>{product.productName}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {product.productCode}
+                                      </span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={item.unit}
+                        onValueChange={(value) =>
+                          updateItem(index, "unit", value)
+                        }
+                        disabled={!item.productId}
+                      >
+                        <SelectTrigger className="w-[100px]" disabled>
+                          <SelectValue placeholder="Đơn vị" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ALLOWED_UNITS.map((unit) => (
+                            <SelectItem key={unit} value={unit}>
+                              {unit}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          updateItem(
+                            index,
+                            "quantity",
+                            Number.parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="w-[80px]"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={item.unitCost}
+                        onChange={(e) => {
+                          // Giới hạn giá trị tối đa để tránh tràn
+                          const value = Math.min(
+                            Number.parseInt(e.target.value) || 0,
+                            999999999
+                          );
+                          updateItem(index, "unitCost", value);
+                        }}
+                        className="w-[100px]"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-[140px] justify-start text-left font-normal",
+                              !item.DateOfManufacture && "text-muted-foreground"
+                            )}
+                          >
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {item.DateOfManufacture ? (
+                              format(
+                                new Date(item.DateOfManufacture),
+                                "dd/MM/yyyy"
+                              )
+                            ) : (
+                              <span>Chọn ngày</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <CalendarComponent
+                            mode="single"
+                            selected={
+                              item.DateOfManufacture
+                                ? new Date(item.DateOfManufacture)
+                                : undefined
+                            }
+                            onSelect={(date) =>
+                              updateItem(
+                                index,
+                                "DateOfManufacture",
+                                date ? format(date, "yyyy-MM-dd") : ""
+                              )
+                            }
+                            initialFocus
+                            locale={vi}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[120px] truncate"
+                      title={`${item.total.toLocaleString()} đ`}
+                    >
+                      {item.total.toLocaleString()} đ
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeItem(index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+              {items.length > 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-right font-medium">
+                    Tổng cộng:
+                  </TableCell>
+                  <TableCell
+                    className="font-bold max-w-[120px] truncate"
+                    title={`${calculateTotal().toLocaleString()} đ`}
+                  >
+                    {calculateTotal().toLocaleString()} đ
+                  </TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="note">Ghi chú</Label>
+        <Textarea
+          id="note"
+          name="note"
+          placeholder="Nhập ghi chú (nếu có)"
+          value={formData.note}
+          onChange={handleInputChange}
+          className="min-h-[80px]"
+        />
+      </div>
+
       <DialogFooter className="pt-4">
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isLoading}
+        >
           Hủy
         </Button>
-        <Button type="submit">Tạo phiếu nhập</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Đang lưu...
+            </>
+          ) : (
+            "Tạo phiếu nhập"
+          )}
+        </Button>
       </DialogFooter>
     </form>
   );
