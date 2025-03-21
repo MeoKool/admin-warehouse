@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +22,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, Calendar } from "lucide-react";
+import {
+  DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, Calendar, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover,
@@ -92,6 +98,10 @@ export function ImportForm({ onClose }: ImportFormProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -133,6 +143,15 @@ export function ImportForm({ onClose }: ImportFormProps) {
 
     fetchProducts();
   }, [API_URL, token]);
+
+  // Focus search input when product selector opens
+  useEffect(() => {
+    if (isProductSelectorOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isProductSelectorOpen]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -187,12 +206,14 @@ export function ImportForm({ onClose }: ImportFormProps) {
     );
   };
 
-  const selectProduct = (index: number, productId: number) => {
+  const selectProduct = (productId: number) => {
+    if (activeItemIndex === null) return;
+
     const product = products.find((p) => p.productId === productId);
     if (product) {
       setItems((prev) =>
         prev.map((item, i) => {
-          if (i === index) {
+          if (i === activeItemIndex) {
             return {
               ...item,
               productId: product.productId,
@@ -205,7 +226,14 @@ export function ImportForm({ onClose }: ImportFormProps) {
           return item;
         })
       );
+      setIsProductSelectorOpen(false);
+      setSearchTerm("");
     }
+  };
+
+  const openProductSelector = (index: number) => {
+    setActiveItemIndex(index);
+    setIsProductSelectorOpen(true);
   };
 
   const calculateTotal = () => {
@@ -391,79 +419,30 @@ export function ImportForm({ onClose }: ImportFormProps) {
                 items.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                            disabled={isLoadingProducts}
-                          >
-                            {isLoadingProducts ? (
-                              <div className="flex items-center">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
-                                <span>Đang tải...</span>
-                              </div>
-                            ) : item.productName ? (
-                              <div className="flex flex-col">
-                                <span>{item.productName}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {item.productCode}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">
-                                Chọn sản phẩm
-                              </span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="p-0 w-[300px]"
-                          align="start"
-                          side="bottom"
-                        >
-                          <div className="p-2">
-                            <Input
-                              placeholder="Tìm sản phẩm..."
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              className="mb-2"
-                            />
-                            <div className="max-h-[200px] overflow-y-auto">
-                              {isLoadingProducts ? (
-                                <div className="flex items-center justify-center py-4">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
-                                  <span>Đang tải...</span>
-                                </div>
-                              ) : filteredProducts.length === 0 ? (
-                                <div className="text-center py-4 text-muted-foreground">
-                                  Không tìm thấy sản phẩm
-                                </div>
-                              ) : (
-                                filteredProducts.map((product) => (
-                                  <div
-                                    key={product.productId}
-                                    className="flex flex-col p-2 hover:bg-slate-100 rounded cursor-pointer"
-                                    onClick={() => {
-                                      selectProduct(index, product.productId);
-                                      setSearchTerm("");
-                                      // Đóng popover sau khi chọn
-                                      document.body.click();
-                                    }}
-                                  >
-                                    <span className="font-medium">
-                                      {product.productName}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {product.productCode}
-                                    </span>
-                                  </div>
-                                ))
-                              )}
-                            </div>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                        disabled={isLoadingProducts}
+                        onClick={() => openProductSelector(index)}
+                      >
+                        {isLoadingProducts ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+                            <span>Đang tải...</span>
                           </div>
-                        </PopoverContent>
-                      </Popover>
+                        ) : item.productName ? (
+                          <div className="flex flex-col">
+                            <span>{item.productName}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {item.productCode}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Chọn sản phẩm
+                          </span>
+                        )}
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <Select
@@ -628,6 +607,79 @@ export function ImportForm({ onClose }: ImportFormProps) {
           )}
         </Button>
       </DialogFooter>
+
+      {/* Dialog cho chọn sản phẩm */}
+      <Dialog
+        open={isProductSelectorOpen}
+        onOpenChange={setIsProductSelectorOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Chọn sản phẩm</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                ref={searchInputRef}
+                placeholder="Tìm kiếm sản phẩm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                >
+                  <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                </button>
+              )}
+            </div>
+
+            <div className="border rounded-md max-h-[300px] overflow-y-auto">
+              {isLoadingProducts ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mr-2"></div>
+                  <span>Đang tải danh sách sản phẩm...</span>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm
+                    ? "Không tìm thấy sản phẩm phù hợp"
+                    : "Không có sản phẩm nào"}
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product.productId}
+                      className="p-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                      onClick={() => selectProduct(product.productId)}
+                    >
+                      <div className="font-medium">{product.productName}</div>
+                      <div className="text-sm text-muted-foreground flex justify-between mt-1">
+                        <span>Mã: {product.productCode}</span>
+                        <span>Đơn vị: {product.unit}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsProductSelectorOpen(false)}
+            >
+              Đóng
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
