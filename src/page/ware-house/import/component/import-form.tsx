@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,7 +92,6 @@ export function ImportForm({ onClose }: ImportFormProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId");
@@ -138,9 +137,13 @@ export function ImportForm({ onClose }: ImportFormProps) {
 
   // Focus search input when product selector opens
   useEffect(() => {
-    if (isProductSelectorOpen && searchInputRef.current) {
+    if (isProductSelectorOpen) {
+      // Sử dụng setTimeout để đảm bảo DOM đã được cập nhật
       setTimeout(() => {
-        searchInputRef.current?.focus();
+        const searchInput = document.getElementById("product-search");
+        if (searchInput) {
+          searchInput.focus();
+        }
       }, 100);
     }
   }, [isProductSelectorOpen]);
@@ -581,7 +584,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
             <div className="relative">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                ref={searchInputRef}
+                id="product-search"
                 placeholder="Tìm kiếm sản phẩm..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
