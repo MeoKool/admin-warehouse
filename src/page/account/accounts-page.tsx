@@ -83,20 +83,21 @@ export default function AccountsPage() {
     }
   };
 
-  const handleToggleStatus = async (userId: string | number) => {
+  const handleToggleStatus = async (
+    userId: string | number,
+    currentStatus: boolean
+  ) => {
     try {
-      const response = await accountService.toggleAccountStatus(String(userId));
-      if (response.success === true) {
-        toast.success(response.message);
-      } else {
-        toast.error("Không thể thay đổi trạng thái tài khoản");
-      }
+      await accountService.toggleAccountStatus(String(userId), !currentStatus);
+      toast.success(
+        `Tài khoản đã được ${!currentStatus ? "kích hoạt" : "vô hiệu hóa"}`
+      );
 
       // Update the account status locally to avoid refetching all accounts
       setAccounts((prevAccounts) =>
         prevAccounts.map((account) =>
           account.userId === userId
-            ? { ...account, status: !account.status }
+            ? { ...account, status: !currentStatus }
             : account
         )
       );

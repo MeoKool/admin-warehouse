@@ -7,16 +7,16 @@ export interface Account {
   userId: string; // Unique identifier for the user
   username: string; // Username of the account
   email: string; // Email address
-  password: string; // Password
+  password?: string; // Password
   userType: "EMPLOYEE" | "AGENT"; // Type of user
   phone: string; // Phone number
   status: boolean; // Active or inactive status
-  fullName: string;
-  agencyName: string;
-  street: string;
-  wardName: string;
-  districtName: string;
-  provinceName: string;
+  fullName?: string; // Full name of the user
+  agencyName?: string; // Agency name (for agents)
+  street?: string; // Street address
+  wardName?: string; // Ward name
+  districtName?: string; // District name
+  provinceName?: string; // Province name
 }
 
 // Interface for paginated account response
@@ -35,11 +35,6 @@ export interface AccountParams {
   type?: string; // Filter by user type
 }
 
-export interface AccountStatusResponse {
-  success: boolean; // Status of the operation
-  message: string; // Message from the server
-}
-
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_URL,
@@ -52,7 +47,8 @@ const api = axios.create({
 // Add request interceptor for auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("auth_token");
+    // Lấy token từ session storage thay vì localStorage
+    const token = sessionStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -65,19 +61,20 @@ api.interceptors.request.use(
 
 export const accountService = {
   // Get paginated accounts
-  getAccounts: async (params: AccountParams = {}): Promise<AccountResponse> => {
+  getAccounts: async (): Promise<AccountResponse> => {
     try {
-      const response = await api.get("/user", {
-        params: {
-          page: params.page || 1,
-          limit: params.limit || 100, // Get more items to handle client-side filtering
-        },
-      });
+      const response = await api.get("/user");
 
-      // Handle different response formats
-      if (response.data.items) {
-        return response.data;
+      // Handle the new response format where users are in a "users" array
+      if (response.data.users && Array.isArray(response.data.users)) {
+        return {
+          items: response.data.users,
+          totalItems: response.data.users.length,
+          totalPages: 1,
+          currentPage: 1,
+        };
       } else if (Array.isArray(response.data)) {
+        // Fallback for direct array response
         return {
           items: response.data,
           totalItems: response.data.length,
@@ -85,6 +82,7 @@ export const accountService = {
           currentPage: 1,
         };
       } else {
+        // Default empty response
         return {
           items: [],
           totalItems: 0,
@@ -145,9 +143,14 @@ export const accountService = {
   },
 
   // Toggle account status (activate/deactivate)
-  toggleAccountStatus: async (id: string): Promise<AccountStatusResponse> => {
+  toggleAccountStatus: async (
+    id: string,
+    active: boolean
+  ): Promise<Account> => {
     try {
-      const response = await api.put(`/${id}/UnActive`);
+      const response = await api.put(`/${id}/UnActive`, {
+        status: active,
+      });
       return response.data;
     } catch (error) {
       console.error(`Error toggling status for account with ID ${id}:`, error);
