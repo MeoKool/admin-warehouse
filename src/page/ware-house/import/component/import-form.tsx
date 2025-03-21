@@ -29,17 +29,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Calendar, Search, X } from "lucide-react";
+import { Plus, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import axios from "axios";
 
 // Định nghĩa các interface
@@ -496,46 +488,14 @@ export function ImportForm({ onClose }: ImportFormProps) {
                       />
                     </TableCell>
                     <TableCell>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-[140px] justify-start text-left font-normal",
-                              !item.DateOfManufacture && "text-muted-foreground"
-                            )}
-                          >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {item.DateOfManufacture ? (
-                              format(
-                                new Date(item.DateOfManufacture),
-                                "dd/MM/yyyy"
-                              )
-                            ) : (
-                              <span>Chọn ngày</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <CalendarComponent
-                            mode="single"
-                            selected={
-                              item.DateOfManufacture
-                                ? new Date(item.DateOfManufacture)
-                                : undefined
-                            }
-                            onSelect={(date) =>
-                              updateItem(
-                                index,
-                                "DateOfManufacture",
-                                date ? format(date, "yyyy-MM-dd") : ""
-                              )
-                            }
-                            initialFocus
-                            locale={vi}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input
+                        type="date"
+                        value={item.DateOfManufacture}
+                        onChange={(e) =>
+                          updateItem(index, "DateOfManufacture", e.target.value)
+                        }
+                        className="w-[140px]"
+                      />
                     </TableCell>
                     <TableCell
                       className="max-w-[120px] truncate"
