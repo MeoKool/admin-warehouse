@@ -1,3 +1,5 @@
+"use client";
+
 import type React from "react";
 
 import { useState, useEffect } from "react";
@@ -32,14 +34,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import axios from "axios";
 
 // Định nghĩa các interface
@@ -424,41 +418,50 @@ export function ImportForm({ onClose }: ImportFormProps) {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
-                          className="p-0"
+                          className="p-0 w-[300px]"
                           align="start"
                           side="bottom"
                         >
-                          <Command>
-                            <CommandInput
+                          <div className="p-2">
+                            <Input
                               placeholder="Tìm sản phẩm..."
                               value={searchTerm}
-                              onValueChange={setSearchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="mb-2"
                             />
-                            <CommandList>
-                              <CommandEmpty>
-                                Không tìm thấy sản phẩm
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {filteredProducts.map((product) => (
-                                  <CommandItem
+                            <div className="max-h-[200px] overflow-y-auto">
+                              {isLoadingProducts ? (
+                                <div className="flex items-center justify-center py-4">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+                                  <span>Đang tải...</span>
+                                </div>
+                              ) : filteredProducts.length === 0 ? (
+                                <div className="text-center py-4 text-muted-foreground">
+                                  Không tìm thấy sản phẩm
+                                </div>
+                              ) : (
+                                filteredProducts.map((product) => (
+                                  <div
                                     key={product.productId}
-                                    value={product.productName}
-                                    onSelect={() => {
+                                    className="flex flex-col p-2 hover:bg-slate-100 rounded cursor-pointer"
+                                    onClick={() => {
                                       selectProduct(index, product.productId);
                                       setSearchTerm("");
+                                      // Đóng popover sau khi chọn
+                                      document.body.click();
                                     }}
                                   >
-                                    <div className="flex flex-col">
-                                      <span>{product.productName}</span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {product.productCode}
-                                      </span>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
+                                    <span className="font-medium">
+                                      {product.productName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {product.productCode}
+                                    </span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
                         </PopoverContent>
                       </Popover>
                     </TableCell>
