@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter, Package, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
 import axios from "axios";
 
 interface InventoryItem {
@@ -82,7 +81,6 @@ export default function InventoryPage() {
         }
       } catch (error) {
         console.error("Error fetching inventory:", error);
-        toast.error("Không thể tải dữ liệu kho hàng");
         setInventoryItems([]);
         setFilteredItems([]);
         setProductSummaries([]);

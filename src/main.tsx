@@ -16,6 +16,7 @@ import WarehouseProfile from "./page/ware-house/proflie/warehouse-profile";
 import WarehouseDashboard from "./page/ware-house/dashboard/warehouse-dashboard";
 import { WarehouseLayout } from "./components/layout/warehouse-layout";
 import InventoryPage from "./page/ware-house/inventory/inventory-page";
+import ExportApprovalPage from "./page/ware-house/export-approve/export-approve-page";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -49,6 +50,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="import" element={<ImportPage />} />
             <Route path="profile" element={<WarehouseProfile />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="export/approval" element={<ExportApprovalPage />} />
             {/* 404 for non-existent warehouse routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>

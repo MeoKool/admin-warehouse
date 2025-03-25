@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,51 +22,190 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 
 interface ExportFormProps {
   onClose: () => void;
 }
 
-// Mock data for products
-const mockProducts = [
-  { id: "SP001", name: "Sản phẩm 1", unit: "Cái", price: 100000 },
-  { id: "SP002", name: "Sản phẩm 2", unit: "Hộp", price: 200000 },
-  { id: "SP003", name: "Sản phẩm 3", unit: "Thùng", price: 500000 },
-  { id: "SP004", name: "Sản phẩm 4", unit: "Cái", price: 150000 },
-  { id: "SP005", name: "Sản phẩm 5", unit: "Hộp", price: 300000 },
-];
+// Interface cho dữ liệu form theo cấu trúc JSON mới
+interface ExportFormData {
+  documentNumber: string;
+  documentDate: string;
+  exportDate: string;
+  exportType: string;
+  warehouseId: number | string;
+  requestExportId: number | null;
+  note: string;
+}
 
-// Mock data for warehouses
-const mockWarehouses = [
-  { id: "KHO001", name: "Kho Hà Nội" },
-  { id: "KHO002", name: "Kho Hồ Chí Minh" },
-  { id: "KHO003", name: "Kho Đà Nẵng" },
+// Interface cho item theo cấu trúc JSON mới
+interface ExportItem {
+  warehouseProductId: number;
+  productId: number;
+  productName: string;
+  batchNumber: string;
+  quantity: number;
+  unitPrice: number;
+  totalProductAmount: number;
+  expiryDate: string;
+}
+
+// Interface for inventory items from API
+interface InventoryItem {
+  warehouseProductId: number;
+  productId: number;
+  productName: string;
+  warehouseId: number;
+  batchId: number;
+  batchCode: string;
+  expirationDate: string;
+  quantity: number;
+  status: string;
+  unit?: string;
+  price?: number;
+}
+
+// Interface for request export items
+interface RequestExportItem {
+  warehouseRequestExportId: number;
+  requestExportId: number;
+  productId: number;
+  quantityRequested: number;
+  remainingQuantity: number;
+}
+
+// Các loại xuất kho
+const EXPORT_TYPES = [
+  "Xuất hàng",
+  "Xuất trả",
+  "Xuất hủy",
+  "Xuất kiểm kê",
+  "Xuất khác",
 ];
 
 export function ExportForm({ onClose }: ExportFormProps) {
-  const [formData, setFormData] = useState({
-    orderNumber: "",
+  // State cho form data theo cấu trúc mới
+  const [formData, setFormData] = useState<ExportFormData>({
+    documentNumber: `XK-${new Date().getTime().toString().slice(-6)}`,
+    documentDate: new Date().toISOString().split("T")[0],
     exportDate: new Date().toISOString().split("T")[0],
+    exportType: "Xuất hàng",
     warehouseId: "",
-    receiverName: "",
-    receiverAddress: "",
-    receiverPhone: "",
+    requestExportId: null,
     note: "",
   });
 
-  const [items, setItems] = useState<
-    Array<{
-      productId: string;
-      productName: string;
-      quantity: number;
-      unit: string;
-      price: number;
-      batchCode: string;
-      total: number;
-    }>
+  // State cho danh sách sản phẩm
+  const [items, setItems] = useState<ExportItem[]>([]);
+
+  // State cho inventory và request export
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [filteredInventoryItems, setFilteredInventoryItems] = useState<
+    InventoryItem[]
   >([]);
+  const [requestExports, setRequestExports] = useState<RequestExportItem[]>([]);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+  const [isLoadingRequestExports, setIsLoadingRequestExports] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProductIndex, setSelectedProductIndex] = useState<
+    number | null
+  >(null);
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+
+  const token = sessionStorage.getItem("token");
+  const warehouseId = sessionStorage.getItem("warehouseId") || "8";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+  // Fetch inventory data and request exports when component mounts
+  useEffect(() => {
+    fetchInventory();
+    fetchRequestExports();
+  }, []);
+
+  // Fetch inventory data from API
+  const fetchInventory = async () => {
+    setIsLoadingInventory(true);
+    try {
+      const response = await axios.get(`${API_URL}${warehouseId}/products`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (Array.isArray(response.data)) {
+        // Add default unit and price if not provided by API
+        const processedItems = response.data.map((item: InventoryItem) => ({
+          ...item,
+          unit: item.unit || "Cái",
+          price: item.price || 0,
+        }));
+        setInventoryItems(processedItems);
+        setFilteredInventoryItems(processedItems);
+
+        // Sử dụng warehouseId trực tiếp từ session storage
+        setFormData((prev) => ({
+          ...prev,
+          warehouseId: Number(warehouseId),
+        }));
+      } else {
+        setInventoryItems([]);
+        setFilteredInventoryItems([]);
+        toast.error("Không thể tải dữ liệu sản phẩm");
+      }
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      toast.error("Không thể tải dữ liệu sản phẩm");
+      setInventoryItems([]);
+      setFilteredInventoryItems([]);
+    } finally {
+      setIsLoadingInventory(false);
+    }
+  };
+
+  // Fetch request exports from API
+  const fetchRequestExports = async () => {
+    setIsLoadingRequestExports(true);
+    try {
+      const response = await axios.get(
+        `${API_URL}WarehouseRequestExport/warehouse/${warehouseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (Array.isArray(response.data)) {
+        setRequestExports(response.data);
+      } else {
+        setRequestExports([]);
+      }
+    } catch (error) {
+      console.error("Error fetching request exports:", error);
+      toast.error("Không thể tải danh sách yêu cầu xuất kho");
+      setRequestExports([]);
+    } finally {
+      setIsLoadingRequestExports(false);
+    }
+  };
+
+  // Filter inventory items based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredInventoryItems(inventoryItems);
+    } else {
+      const filtered = inventoryItems.filter(
+        (item) =>
+          item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.productId.toString().includes(searchTerm) ||
+          item.batchCode.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredInventoryItems(filtered);
+    }
+  }, [searchTerm, inventoryItems]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -77,83 +215,180 @@ export function ExportForm({ onClose }: ExportFormProps) {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "requestExportId") {
+      if (value === "none") {
+        setFormData((prev) => ({ ...prev, [name]: null }));
+      } else {
+        setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        productId: "",
-        productName: "",
-        quantity: 1,
-        unit: "",
-        price: 0,
-        batchCode: "",
-        total: 0,
-      },
-    ]);
+    setSelectedProductIndex(items.length);
+    setIsProductSelectorOpen(true);
+    setSearchTerm("");
   };
 
   const removeItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: string, value: any) => {
+  // Cập nhật hàm updateItemQuantity để giới hạn số lượng không vượt quá số lượng có sẵn
+  const updateItemQuantity = (index: number, quantity: number) => {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i === index) {
-          const updatedItem = { ...item, [field]: value };
+          // Tìm sản phẩm tương ứng trong inventoryItems để lấy số lượng tối đa
+          const inventoryItem = inventoryItems.find(
+            (invItem) => invItem.warehouseProductId === item.warehouseProductId
+          );
 
-          // If product ID changed, update product details
-          if (field === "productId" && value) {
-            const product = mockProducts.find((p) => p.id === value);
-            if (product) {
-              updatedItem.productName = product.name;
-              updatedItem.unit = product.unit;
-              updatedItem.price = product.price;
-              updatedItem.total = updatedItem.quantity * product.price;
-            }
+          // Giới hạn số lượng không vượt quá số lượng có sẵn
+          const maxQuantity = inventoryItem?.quantity || 1;
+          const newQuantity = Math.min(Math.max(1, quantity), maxQuantity);
+
+          if (quantity > maxQuantity) {
+            toast.warning(`Số lượng không thể vượt quá ${maxQuantity}`);
           }
 
-          // If quantity changed, update total
-          if (field === "quantity") {
-            updatedItem.total = updatedItem.price * value;
-          }
-
-          return updatedItem;
+          return {
+            ...item,
+            quantity: newQuantity,
+            totalProductAmount: newQuantity * item.unitPrice,
+          };
         }
         return item;
       })
     );
   };
 
-  const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + item.total, 0);
+  // Cập nhật hàm selectProduct để phù hợp với cấu trúc mới
+  const selectProduct = (product: InventoryItem) => {
+    if (selectedProductIndex === null) return;
+
+    // Check if product is already in the list
+    const existingIndex = items.findIndex(
+      (item) => item.warehouseProductId === product.warehouseProductId
+    );
+
+    if (existingIndex !== -1 && existingIndex !== selectedProductIndex) {
+      toast.error("Sản phẩm này đã được thêm vào danh sách");
+      return;
+    }
+
+    const newItem: ExportItem = {
+      warehouseProductId: product.warehouseProductId,
+      productId: product.productId,
+      productName: product.productName,
+      batchNumber: product.batchCode,
+      quantity: 1,
+      unitPrice: product.price || 0,
+      totalProductAmount: product.price || 0,
+      expiryDate: product.expirationDate,
+    };
+
+    if (selectedProductIndex < items.length) {
+      // Replace existing item
+      setItems((prev) =>
+        prev.map((item, i) => (i === selectedProductIndex ? newItem : item))
+      );
+    } else {
+      // Add new item
+      setItems((prev) => [...prev, newItem]);
+    }
+    toast.info(`Số lượng tối đa có thể xuất: ${product.quantity}`);
+
+    setIsProductSelectorOpen(false);
+    setSelectedProductIndex(null);
   };
 
+  const calculateTotal = () => {
+    return items.reduce((sum, item) => sum + item.totalProductAmount, 0);
+  };
+
+  // Cập nhật hàm handleSubmit để phù hợp với cấu trúc mới
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate form
-    if (!formData.orderNumber || !formData.warehouseId || items.length === 0) {
+    if (!formData.documentNumber || items.length === 0) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
 
-    // Check if all items have product and quantity
-    const invalidItems = items.some(
-      (item) => !item.productId || item.quantity <= 0
-    );
+    // Check if all items have valid quantity
+    const invalidItems = items.some((item) => item.quantity <= 0);
     if (invalidItems) {
-      toast.error("Vui lòng kiểm tra lại thông tin sản phẩm");
+      toast.error("Vui lòng kiểm tra lại số lượng sản phẩm");
       return;
     }
 
+    // Chuẩn bị dữ liệu theo đúng cấu trúc yêu cầu
+    const exportData = {
+      documentNumber: formData.documentNumber,
+      documentDate: new Date(formData.documentDate).toISOString(),
+      exportDate: new Date(formData.exportDate).toISOString(),
+      exportType: formData.exportType,
+      warehouseId: Number(warehouseId),
+      requestExportId: formData.requestExportId || 0,
+      details: items.map((item) => ({
+        warehouseProductId: item.warehouseProductId,
+        productId: item.productId,
+        productName: item.productName,
+        batchNumber: item.batchNumber,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalProductAmount: item.totalProductAmount,
+        expiryDate: new Date(item.expiryDate).toISOString(),
+      })),
+    };
+
     // Submit form data
-    console.log("Form data:", { ...formData, items });
-    toast.success("Tạo phiếu xuất thành công");
-    onClose();
+    console.log("Form data:", exportData);
+
+    // Gửi dữ liệu lên API
+    submitExportData(exportData);
+  };
+
+  // Thêm hàm gửi dữ liệu lên API
+  const submitExportData = async (exportData: any) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}export-receipts`,
+        exportData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Tạo phiếu xuất thành công");
+        onClose();
+      } else {
+        throw new Error("Không thể tạo phiếu xuất");
+      }
+    } catch (error) {
+      console.error("Error creating export:", error);
+      toast.error("Không thể tạo phiếu xuất. Vui lòng thử lại sau.");
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString("vi-VN");
+    } catch (error) {
+      console.log("Error formatting date:", error);
+
+      return "N/A";
+    }
   };
 
   return (
@@ -161,18 +396,34 @@ export function ExportForm({ onClose }: ExportFormProps) {
       <div className="grid gap-6 py-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="orderNumber">
-              Mã đơn hàng <span className="text-red-500">*</span>
+            <Label htmlFor="documentNumber">
+              Mã phiếu xuất <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="orderNumber"
-              name="orderNumber"
-              placeholder="Nhập mã đơn hàng"
-              value={formData.orderNumber}
+              id="documentNumber"
+              name="documentNumber"
+              placeholder="Nhập mã phiếu xuất"
+              value={formData.documentNumber}
               onChange={handleInputChange}
               required
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentDate">
+              Ngày lập phiếu <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="documentDate"
+              name="documentDate"
+              type="date"
+              value={formData.documentDate}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="exportDate">
               Ngày xuất <span className="text-red-500">*</span>
@@ -186,62 +437,62 @@ export function ExportForm({ onClose }: ExportFormProps) {
               required
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="exportType">
+              Loại xuất <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={formData.exportType}
+              onValueChange={(value) => handleSelectChange("exportType", value)}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn loại xuất" />
+              </SelectTrigger>
+              <SelectContent>
+                {EXPORT_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="warehouseId">
-            Kho xuất hàng <span className="text-red-500">*</span>
-          </Label>
+          <Label htmlFor="requestExportId">Yêu cầu xuất kho</Label>
           <Select
-            value={formData.warehouseId}
-            onValueChange={(value) => handleSelectChange("warehouseId", value)}
-            required
+            value={formData.requestExportId?.toString() || ""}
+            onValueChange={(value) =>
+              handleSelectChange("requestExportId", value)
+            }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Chọn kho xuất hàng" />
+              <SelectValue placeholder="Chọn yêu cầu xuất kho (nếu có)" />
             </SelectTrigger>
             <SelectContent>
-              {mockWarehouses.map((warehouse) => (
-                <SelectItem key={warehouse.id} value={warehouse.id}>
-                  {warehouse.name}
+              <SelectItem value="none">Không có yêu cầu</SelectItem>
+              {isLoadingRequestExports ? (
+                <SelectItem value="loading" disabled>
+                  Đang tải...
                 </SelectItem>
-              ))}
+              ) : requestExports.length === 0 ? (
+                <SelectItem value="empty" disabled>
+                  Không có yêu cầu xuất kho
+                </SelectItem>
+              ) : (
+                requestExports.map((req) => (
+                  <SelectItem
+                    key={req.requestExportId}
+                    value={req.requestExportId.toString()}
+                  >
+                    Yêu cầu #{req.requestExportId}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="receiverName">Người nhận</Label>
-            <Input
-              id="receiverName"
-              name="receiverName"
-              placeholder="Nhập tên người nhận"
-              value={formData.receiverName}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="receiverPhone">Số điện thoại</Label>
-            <Input
-              id="receiverPhone"
-              name="receiverPhone"
-              placeholder="Nhập số điện thoại người nhận"
-              value={formData.receiverPhone}
-              onChange={handleInputChange}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="receiverAddress">Địa chỉ nhận hàng</Label>
-          <Input
-            id="receiverAddress"
-            name="receiverAddress"
-            placeholder="Nhập địa chỉ nhận hàng"
-            value={formData.receiverAddress}
-            onChange={handleInputChange}
-          />
         </div>
 
         <div className="space-y-2">
@@ -260,9 +511,9 @@ export function ExportForm({ onClose }: ExportFormProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Sản phẩm</TableHead>
-                  <TableHead>Mã lô hàng</TableHead>
+                  <TableHead>Mã lô</TableHead>
+                  <TableHead>Hạn sử dụng</TableHead>
                   <TableHead>Số lượng</TableHead>
-                  <TableHead>Đơn vị</TableHead>
                   <TableHead>Đơn giá</TableHead>
                   <TableHead>Thành tiền</TableHead>
                   <TableHead></TableHead>
@@ -282,51 +533,34 @@ export function ExportForm({ onClose }: ExportFormProps) {
                   items.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <Select
-                          value={item.productId}
-                          onValueChange={(value) =>
-                            updateItem(index, "productId", value)
-                          }
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Chọn sản phẩm" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {mockProducts.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="font-medium">{item.productName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Mã: {item.productId}
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          placeholder="Mã lô"
-                          value={item.batchCode}
-                          onChange={(e) =>
-                            updateItem(index, "batchCode", e.target.value)
-                          }
-                        />
-                      </TableCell>
+                      <TableCell>{item.batchNumber}</TableCell>
+                      <TableCell>{formatDate(item.expiryDate)}</TableCell>
                       <TableCell>
                         <Input
                           type="number"
                           min="1"
                           value={item.quantity}
-                          onChange={(e) =>
-                            updateItem(
-                              index,
-                              "quantity",
-                              Number.parseInt(e.target.value) || 0
-                            )
-                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "" || /^\d+$/.test(value)) {
+                              updateItemQuantity(
+                                index,
+                                value === "" ? 0 : Number.parseInt(value, 10)
+                              );
+                            }
+                          }}
                           className="w-[80px]"
                         />
                       </TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell>{item.price.toLocaleString()} đ</TableCell>
-                      <TableCell>{item.total.toLocaleString()} đ</TableCell>
+                      <TableCell>{item.unitPrice.toLocaleString()} đ</TableCell>
+                      <TableCell>
+                        {item.totalProductAmount.toLocaleString()} đ
+                      </TableCell>
                       <TableCell>
                         <Button
                           type="button"
@@ -368,6 +602,93 @@ export function ExportForm({ onClose }: ExportFormProps) {
           />
         </div>
       </div>
+
+      {/* Product Selector Dialog */}
+      {isProductSelectorOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-[800px] max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-semibold">Chọn sản phẩm từ kho</h3>
+              <div className="mt-2 relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Tìm theo tên sản phẩm, mã sản phẩm, mã lô..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="overflow-auto flex-1 p-4">
+              {isLoadingInventory ? (
+                <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Đang tải dữ liệu sản phẩm...</span>
+                </div>
+              ) : filteredInventoryItems.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Không tìm thấy sản phẩm nào phù hợp
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  {filteredInventoryItems.map((product) => (
+                    <div
+                      key={product.warehouseProductId}
+                      className="border rounded-md p-3 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => selectProduct(product)}
+                    >
+                      <div className="font-medium">{product.productName}</div>
+                      <div className="grid grid-cols-3 gap-2 mt-1 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Mã SP:</span>{" "}
+                          {product.productId}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Mã lô:</span>{" "}
+                          {product.batchCode}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            Số lượng:
+                          </span>{" "}
+                          {product.quantity}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-1 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">
+                            Hạn sử dụng:
+                          </span>{" "}
+                          {formatDate(product.expirationDate)}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            Trạng thái:
+                          </span>{" "}
+                          {product.status || "Mới"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsProductSelectorOpen(false)}
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DialogFooter className="pt-4">
         <Button type="button" variant="outline" onClick={onClose}>

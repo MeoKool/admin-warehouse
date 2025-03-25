@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 import { useState, useEffect } from "react";
@@ -67,13 +65,7 @@ interface ImportFormProps {
 const ALLOWED_UNITS = ["Chai", "Bao"];
 
 // Các loại nhập kho
-const IMPORT_TYPES = [
-  "Nhập Sản Xuất",
-  "Nhập Mua Hàng",
-  "Nhập Trả Hàng",
-  "Nhập Kiểm Kê",
-  "Nhập Khác",
-];
+const IMPORT_TYPES = ["Nhập Sản Xuất"];
 
 export function ImportForm({ onClose }: ImportFormProps) {
   const [formData, setFormData] = useState({
@@ -249,7 +241,8 @@ export function ImportForm({ onClose }: ImportFormProps) {
       (item) => !item.productId || item.quantity <= 0
     );
     if (invalidItems) {
-      toast.error("Vui lòng kiểm tra lại thông tin sản phẩm");
+      console.log("Invalid items:", items);
+
       return;
     }
 

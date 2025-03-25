@@ -2,13 +2,14 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   User,
-  Package,
   PackageCheck,
   ChevronLeft,
   ChevronRight,
   Menu,
   Warehouse,
   BarChart3,
+  PackagePlus,
+  PackageMinus,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,14 +21,19 @@ const menuItems = [
     icon: <BarChart3 className="h-5 w-5" />,
   },
   {
+    title: "Duyệt đơn xuất kho",
+    path: "/warehouse/export/approval",
+    icon: <PackageCheck className="h-5 w-5" />,
+  },
+  {
     title: "Xuất sản phẩm",
     path: "/warehouse/export",
-    icon: <Package className="h-5 w-5" />,
+    icon: <PackageMinus className="h-5 w-5" />,
   },
   {
     title: "Nhập sản phẩm",
     path: "/warehouse/import",
-    icon: <PackageCheck className="h-5 w-5" />,
+    icon: <PackagePlus className="h-5 w-5" />,
   },
   {
     title: "Kho hàng",
