@@ -219,7 +219,7 @@ export default function ExportPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
             Xuất sản phẩm ra kho
@@ -258,7 +258,7 @@ export default function ExportPage() {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList>
+        <TabsList className="overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="all">Tất cả phiếu xuất</TabsTrigger>
           <TabsTrigger value="completed">Đã hoàn thành</TabsTrigger>
           <TabsTrigger value="pending">Đang xử lý</TabsTrigger>
@@ -267,9 +267,9 @@ export default function ExportPage() {
         <TabsContent value="all" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                 <CardTitle>Danh sách phiếu xuất</CardTitle>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   <div className="relative w-[250px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -295,7 +295,7 @@ export default function ExportPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -405,7 +405,7 @@ export default function ExportPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -496,7 +496,7 @@ export default function ExportPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -576,7 +576,7 @@ export default function ExportPage() {
       </Tabs>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="w-full max-w-3xl sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle>Chi tiết phiếu xuất</DialogTitle>
             <DialogDescription>

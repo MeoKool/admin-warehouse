@@ -335,7 +335,7 @@ export function ExportDetail({
                     className="text-right font-bold"
                     colSpan={canApprove ? 1 : 1}
                   >
-                    {exportData.totalAmount.toLocaleString()} đ
+                    {exportData.totalAmount.toLocaleString()} VNĐ
                   </TableCell>
                 </TableRow>
               </TableBody>
