@@ -407,7 +407,7 @@ export function ImportDetail({ importData }: ImportDetailProps) {
                   {(
                     importDetails?.totalPrice || importData.totalValue
                   ).toLocaleString()}
-                  s đ
+                  VNĐ
                 </TableCell>
                 <TableCell></TableCell>
               </TableRow>

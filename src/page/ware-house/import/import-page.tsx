@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +48,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { ImportForm } from "./component/import-form";
 import { ImportDetail } from "./component/import-detail";
+import { useMediaQuery } from "@/components/hooks/use-media-query";
 
 // Cập nhật interface ImportReceipt để thêm trường warehouse
 interface ImportReceipt {
@@ -76,6 +79,9 @@ export default function ImportPage() {
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+  // Check if screen is mobile
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Fetch imports
   useEffect(() => {
@@ -151,8 +157,56 @@ export default function ImportPage() {
     setIsImportDialogOpen(false);
   };
 
+  // Mobile card view for each import item
+  const ImportCard = ({ imp }: { imp: ImportReceipt }) => (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-base">{imp.documentNumber}</CardTitle>
+          <div
+            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              imp.status === "completed"
+                ? "bg-green-100 text-green-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {imp.status === "completed" ? "Hoàn thành" : "Đang kiểm tra"}
+          </div>
+        </div>
+        <CardDescription className="text-sm">Ngày: {imp.date}</CardDescription>
+      </CardHeader>
+      <CardContent className="pb-2 pt-0">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <p className="text-muted-foreground">Nhà cung cấp:</p>
+            <p className="font-medium">{imp.supplier}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Kho nhập:</p>
+            <p className="font-medium">{imp.warehouse}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Giá trị:</p>
+            <p className="font-medium">{imp.totalValue.toLocaleString()} đ</p>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="pt-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          onClick={() => handleViewDetail(imp)}
+        >
+          <FileText className="h-4 w-4 mr-1" />
+          Chi tiết
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-2 sm:px-4">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
@@ -170,7 +224,7 @@ export default function ImportPage() {
               Tạo phiếu nhập
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[1200px]">
+          <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
               <DialogTitle>Tạo phiếu nhập sản phẩm</DialogTitle>
               <DialogDescription>
@@ -188,11 +242,13 @@ export default function ImportPage() {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList>
-          <TabsTrigger value="all">Tất cả phiếu nhập</TabsTrigger>
-          <TabsTrigger value="completed">Đã hoàn thành</TabsTrigger>
-          <TabsTrigger value="processing">Đang kiểm tra</TabsTrigger>
-        </TabsList>
+        <div className="flex justify-between items-center mb-4">
+          <TabsList>
+            <TabsTrigger value="all">Tất cả phiếu nhập</TabsTrigger>
+            <TabsTrigger value="completed">Đã hoàn thành</TabsTrigger>
+            <TabsTrigger value="processing">Đang kiểm tra</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="all" className="space-y-4">
           <Card>
@@ -211,92 +267,111 @@ export default function ImportPage() {
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[180px]">
                       <Filter className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Trạng thái" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectContent>
-                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                        <SelectItem value="true">Đã hoàn thành</SelectItem>
-                        <SelectItem value="false">Đang kiểm tra</SelectItem>
-                      </SelectContent>
+                      <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                      <SelectItem value="true">Đã hoàn thành</SelectItem>
+                      <SelectItem value="false">Đang kiểm tra</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã phiếu</TableHead>
-                    <TableHead>Ngày nhập</TableHead>
-                    <TableHead>Loại nhập</TableHead>
-                    <TableHead>Nhà cung cấp</TableHead>
-                    <TableHead>Kho nhập</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Giá trị</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                // Mobile card view
+                <div className="space-y-2">
                   {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
-                        <div className="flex justify-center items-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                          <span className="ml-3">Đang tải...</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <div className="flex justify-center items-center h-24">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                      <span className="ml-3">Đang tải...</span>
+                    </div>
                   ) : filteredImports.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center h-24">
-                        Không tìm thấy phiếu nhập nào
-                      </TableCell>
-                    </TableRow>
+                    <div className="text-center py-8">
+                      Không tìm thấy phiếu nhập nào
+                    </div>
                   ) : (
                     filteredImports.map((imp) => (
-                      <TableRow key={imp.id}>
-                        <TableCell className="font-medium">
-                          {imp.documentNumber}
-                        </TableCell>
-                        <TableCell>{imp.date}</TableCell>
-                        <TableCell>{imp.importType}</TableCell>
-                        <TableCell>{imp.supplier}</TableCell>
-                        <TableCell>{imp.warehouse}</TableCell>
-                        <TableCell>
-                          <div
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              imp.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {imp.status === "completed"
-                              ? "Hoàn thành"
-                              : "Đang kiểm tra"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {imp.totalValue.toLocaleString()} đ
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewDetail(imp)}
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Chi tiết
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      <ImportCard key={imp.id} imp={imp} />
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                // Desktop table view
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mã phiếu</TableHead>
+                        <TableHead>Ngày nhập</TableHead>
+                        <TableHead>Nhà cung cấp</TableHead>
+                        <TableHead>Kho nhập</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Giá trị</TableHead>
+                        <TableHead className="text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center h-24">
+                            <div className="flex justify-center items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                              <span className="ml-3">Đang tải...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredImports.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center h-24">
+                            Không tìm thấy phiếu nhập nào
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredImports.map((imp) => (
+                          <TableRow key={imp.id}>
+                            <TableCell className="font-medium">
+                              {imp.documentNumber}
+                            </TableCell>
+                            <TableCell>{imp.date}</TableCell>
+                            <TableCell>{imp.supplier}</TableCell>
+                            <TableCell>{imp.warehouse}</TableCell>
+                            <TableCell>
+                              <div
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  imp.status === "completed"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
+                                {imp.status === "completed"
+                                  ? "Hoàn thành"
+                                  : "Đang kiểm tra"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {imp.totalValue.toLocaleString()} đ
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetail(imp)}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Chi tiết
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-between border-t px-6 py-4">
               <div className="text-sm text-muted-foreground">
@@ -319,69 +394,105 @@ export default function ImportPage() {
         <TabsContent value="completed" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Phiếu nhập đã hoàn thành</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg">
+                Phiếu nhập đã hoàn thành
+              </CardTitle>
+              <CardDescription className="text-sm">
                 Danh sách các phiếu nhập đã hoàn thành kiểm tra chất lượng
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Similar table but filtered for completed imports */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã phiếu</TableHead>
-                    <TableHead>Ngày nhập</TableHead>
-                    <TableHead>Loại nhập</TableHead>
-                    <TableHead>Nhà cung cấp</TableHead>
-                    <TableHead>Kho nhập</TableHead>
-                    <TableHead>Giá trị</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                // Mobile card view
+                <div className="space-y-2">
                   {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center h-24">
-                        <div className="flex justify-center items-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                          <span className="ml-3">Đang tải...</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <div className="flex justify-center items-center h-24">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                      <span className="ml-3">Đang tải...</span>
+                    </div>
                   ) : filteredImports.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center h-24">
-                        Không tìm thấy phiếu nhập nào đã hoàn thành
-                      </TableCell>
-                    </TableRow>
+                    <div className="text-center py-8">
+                      Không tìm thấy phiếu nhập nào đã hoàn thành
+                    </div>
                   ) : (
                     filteredImports.map((imp) => (
-                      <TableRow key={imp.id}>
-                        <TableCell className="font-medium">
-                          {imp.documentNumber}
-                        </TableCell>
-                        <TableCell>{imp.date}</TableCell>
-                        <TableCell>{imp.importType}</TableCell>
-                        <TableCell>{imp.supplier}</TableCell>
-                        <TableCell>{imp.warehouse}</TableCell>
-                        <TableCell>
-                          {imp.totalValue.toLocaleString()} đ
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewDetail(imp)}
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Chi tiết
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      <ImportCard key={imp.id} imp={imp} />
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                // Desktop table view
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mã phiếu</TableHead>
+                        <TableHead>Ngày nhập</TableHead>
+                        <TableHead>Nhà cung cấp</TableHead>
+                        <TableHead>Kho nhập</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Giá trị</TableHead>
+                        <TableHead className="text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center h-24">
+                            <div className="flex justify-center items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                              <span className="ml-3">Đang tải...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredImports.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center h-24">
+                            Không tìm thấy phiếu nhập nào đã hoàn thành
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredImports.map((imp) => (
+                          <TableRow key={imp.id}>
+                            <TableCell className="font-medium">
+                              {imp.documentNumber}
+                            </TableCell>
+                            <TableCell>{imp.date}</TableCell>
+                            <TableCell>{imp.supplier}</TableCell>
+                            <TableCell>{imp.warehouse}</TableCell>
+                            <TableCell>
+                              <div
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  imp.status === "completed"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
+                                {imp.status === "completed"
+                                  ? "Hoàn thành"
+                                  : "Đang kiểm tra"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {imp.totalValue.toLocaleString()} đ
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetail(imp)}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Chi tiết
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -389,77 +500,113 @@ export default function ImportPage() {
         <TabsContent value="processing" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Phiếu nhập đang kiểm tra</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg">
+                Phiếu nhập đang kiểm tra
+              </CardTitle>
+              <CardDescription className="text-sm">
                 Danh sách các phiếu nhập đang trong quá trình kiểm tra chất
                 lượng
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Similar table but filtered for processing imports */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã phiếu</TableHead>
-                    <TableHead>Ngày nhập</TableHead>
-                    <TableHead>Loại nhập</TableHead>
-                    <TableHead>Nhà cung cấp</TableHead>
-                    <TableHead>Kho nhập</TableHead>
-                    <TableHead>Giá trị</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                // Mobile card view
+                <div className="space-y-2">
                   {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center h-24">
-                        <div className="flex justify-center items-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                          <span className="ml-3">Đang tải...</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <div className="flex justify-center items-center h-24">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                      <span className="ml-3">Đang tải...</span>
+                    </div>
                   ) : filteredImports.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center h-24">
-                        Không tìm thấy phiếu nhập nào đang kiểm tra
-                      </TableCell>
-                    </TableRow>
+                    <div className="text-center py-8">
+                      Không tìm thấy phiếu nhập nào đang kiểm tra
+                    </div>
                   ) : (
                     filteredImports.map((imp) => (
-                      <TableRow key={imp.id}>
-                        <TableCell className="font-medium">
-                          {imp.documentNumber}
-                        </TableCell>
-                        <TableCell>{imp.date}</TableCell>
-                        <TableCell>{imp.importType}</TableCell>
-                        <TableCell>{imp.supplier}</TableCell>
-                        <TableCell>{imp.warehouse}</TableCell>
-                        <TableCell>
-                          {imp.totalValue.toLocaleString()} đ
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewDetail(imp)}
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Chi tiết
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                      <ImportCard key={imp.id} imp={imp} />
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                // Desktop table view
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mã phiếu</TableHead>
+                        <TableHead>Ngày nhập</TableHead>
+                        <TableHead>Nhà cung cấp</TableHead>
+                        <TableHead>Kho nhập</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Giá trị</TableHead>
+                        <TableHead className="text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center h-24">
+                            <div className="flex justify-center items-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                              <span className="ml-3">Đang tải...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredImports.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center h-24">
+                            Không tìm thấy phiếu nhập nào đang kiểm tra
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredImports.map((imp) => (
+                          <TableRow key={imp.id}>
+                            <TableCell className="font-medium">
+                              {imp.documentNumber}
+                            </TableCell>
+                            <TableCell>{imp.date}</TableCell>
+                            <TableCell>{imp.supplier}</TableCell>
+                            <TableCell>{imp.warehouse}</TableCell>
+                            <TableCell>
+                              <div
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  imp.status === "completed"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
+                                {imp.status === "completed"
+                                  ? "Hoàn thành"
+                                  : "Đang kiểm tra"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {imp.totalValue.toLocaleString()} đ
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetail(imp)}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Chi tiết
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-[1200px]">
+        <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
             <DialogTitle>Chi tiết phiếu nhập</DialogTitle>
             <DialogDescription>
