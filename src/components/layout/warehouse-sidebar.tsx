@@ -10,6 +10,7 @@ import {
   BarChart3,
   PackagePlus,
   PackageMinus,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,11 @@ const menuItems = [
     title: "Tổng quan",
     path: "/warehouse/dashboard",
     icon: <BarChart3 className="h-5 w-5" />,
+  },
+  {
+    title: "Xem đơn xuất kho",
+    path: "/warehouse/view-export/",
+    icon: <Eye className="h-5 w-5" />,
   },
   {
     title: "Duyệt đơn xuất kho",
