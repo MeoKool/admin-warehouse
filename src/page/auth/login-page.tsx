@@ -25,6 +25,7 @@ import { Loader2, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import authService from "@/services/auth-service";
 import { Checkbox } from "@/components/ui/checkbox";
+import { jwtDecode } from "jwt-decode";
 
 // Form schema for validation
 const formSchema = z.object({
@@ -71,35 +72,41 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await authService.login(data.username, data.password);
+      const token = response.token.token;
 
-      // Store token and role in localStorage or sessionStorage based on rememberMe
+      // Decode token
+      const decoded: any = jwtDecode(token);
+      const userId =
+        decoded[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        ];
+
+      // Store token and role
       if (data.rememberMe) {
-        localStorage.setItem("token", response.token.token);
+        localStorage.setItem("userId", userId);
+        localStorage.setItem("token", token);
         localStorage.setItem("Role", response.token.roleId.toString());
       } else {
-        sessionStorage.setItem("token", response.token.token);
+        sessionStorage.setItem("userId", userId);
+        sessionStorage.setItem("token", token);
         sessionStorage.setItem("Role", response.token.roleId.toString());
       }
 
-      // Redirect based on role
+      // Redirect
       if (response.token.roleId === 1) {
         toast.success("Đăng nhập thành công");
         navigate("/admin");
       } else if (response.token.roleId === 3) {
         toast.success("Đăng nhập thành công");
-
         navigate("/warehouse");
       } else {
         toast.error("Tài khoản của bạn không được phép vào hệ thống");
-        // Clear storage for unauthorized roles
         if (data.rememberMe) {
           localStorage.removeItem("token");
           localStorage.removeItem("Role");
-          localStorage.removeItem("roleName");
         } else {
           sessionStorage.removeItem("token");
           sessionStorage.removeItem("Role");
-          sessionStorage.removeItem("roleName");
         }
       }
     } catch (error) {

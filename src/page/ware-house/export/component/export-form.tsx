@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -109,6 +107,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
   const [requestExports, setRequestExports] = useState<RequestExportItem[]>([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
   const [isLoadingRequestExports, setIsLoadingRequestExports] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProductIndex, setSelectedProductIndex] = useState<
     number | null
@@ -355,6 +354,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
 
   // Thêm hàm gửi dữ liệu lên API
   const submitExportData = async (exportData: any) => {
+    setIsSubmitting(true);
     try {
       const response = await axios.post(
         `${API_URL}export-receipts`,
@@ -369,6 +369,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Tạo phiếu xuất thành công");
+        // Đóng form sau khi tạo thành công
         onClose();
       } else {
         throw new Error("Không thể tạo phiếu xuất");
@@ -376,6 +377,8 @@ export function ExportForm({ onClose }: ExportFormProps) {
     } catch (error) {
       console.error("Error creating export:", error);
       toast.error("Không thể tạo phiếu xuất. Vui lòng thử lại sau.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -694,7 +697,16 @@ export function ExportForm({ onClose }: ExportFormProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           Hủy
         </Button>
-        <Button type="submit">Tạo phiếu xuất</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Đang xử lý...
+            </>
+          ) : (
+            "Tạo phiếu xuất"
+          )}
+        </Button>
       </DialogFooter>
     </form>
   );
