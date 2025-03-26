@@ -45,6 +45,9 @@ import {
   Package,
   Calendar,
   Building,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -93,6 +96,8 @@ export default function ExportPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [exports, setExports] = useState<ExportReceipt[]>([]);
+  const [isExportFormOpen, setIsExportFormOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId") || "8";
@@ -101,7 +106,7 @@ export default function ExportPage() {
   // Fetch export data
   useEffect(() => {
     fetchExports();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchExports = async () => {
     setIsLoading(true);
@@ -147,18 +152,21 @@ export default function ExportPage() {
     if (statusLower === "completed" || statusLower === "approved") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+          <CheckCircle className="h-3.5 w-3.5 mr-1" />
           Hoàn thành
         </Badge>
       );
     } else if (statusLower === "pending") {
       return (
         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
           Đang xử lý
         </Badge>
       );
     } else if (statusLower === "cancelled" || statusLower === "rejected") {
       return (
         <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
+          <AlertCircle className="h-3.5 w-3.5 mr-1" />
           Đã hủy
         </Badge>
       );
@@ -194,8 +202,19 @@ export default function ExportPage() {
   };
 
   const handleCreateExport = () => {
-    // This will be called after successful export creation
-    fetchExports();
+    // Đóng form
+    setIsExportFormOpen(false);
+    // Làm mới dữ liệu
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleExportApproved = () => {
+    // Làm mới dữ liệu sau khi duyệt
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleRefresh = () => {
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   return (
@@ -208,23 +227,29 @@ export default function ExportPage() {
           <p className="text-muted-foreground">Quản lý phiếu xuất sản phẩm</p>
         </div>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Tạo phiếu xuất
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Tạo phiếu xuất sản phẩm</DialogTitle>
-              <DialogDescription>
-                Điền thông tin để tạo phiếu xuất sản phẩm mới
-              </DialogDescription>
-            </DialogHeader>
-            <ExportForm onClose={handleCreateExport} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Làm mới
+          </Button>
+          <Dialog open={isExportFormOpen} onOpenChange={setIsExportFormOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Tạo phiếu xuất
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px]">
+              <DialogHeader>
+                <DialogTitle>Tạo phiếu xuất sản phẩm</DialogTitle>
+                <DialogDescription>
+                  Điền thông tin để tạo phiếu xuất sản phẩm mới
+                </DialogDescription>
+              </DialogHeader>
+              <ExportForm onClose={handleCreateExport} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Tabs
@@ -558,7 +583,12 @@ export default function ExportPage() {
               Thông tin chi tiết phiếu xuất {selectedExport?.documentNumber}
             </DialogDescription>
           </DialogHeader>
-          {selectedExport && <ExportDetail exportData={selectedExport} />}
+          {selectedExport && (
+            <ExportDetail
+              exportData={selectedExport}
+              onApproved={handleExportApproved}
+            />
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
               Đóng

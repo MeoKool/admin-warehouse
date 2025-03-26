@@ -59,7 +59,7 @@ interface ImportReceipt {
   totalValue: number;
   totalItems: number;
   warehouseId?: number;
-  isApproval?: boolean;
+  isApproved?: boolean;
 }
 
 export default function ImportPage() {
@@ -104,8 +104,8 @@ export default function ImportPage() {
               supplier: item.supplier,
               warehouse: "Kho " + (item.warehouseId || ""),
               warehouseId: item.warehouseId,
-              isApproval: item.isApproval,
-              status: item.isApproval ? "completed" : "pending",
+              isApproved: item.isApproved,
+              status: item.isApproved ? "completed" : "pending",
               totalValue: item.totalPrice || 0,
               totalItems: item.batches?.length || 0,
             }))
@@ -131,12 +131,13 @@ export default function ImportPage() {
       imp.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       imp.supplier.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || imp.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || imp.isApproved?.toString() === statusFilter;
 
     const matchesTab =
       activeTab === "all" ||
-      (activeTab === "completed" && imp.isApproval === true) ||
-      (activeTab === "processing" && imp.isApproval === false);
+      (activeTab === "completed" && imp.isApproved === true) ||
+      (activeTab === "processing" && imp.isApproved === false);
 
     return matchesSearch && matchesStatus && matchesTab;
   });
@@ -215,9 +216,11 @@ export default function ImportPage() {
                       <SelectValue placeholder="Trạng thái" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                      <SelectItem value="true">Đã hoàn thành</SelectItem>
-                      <SelectItem value="pending">Đang kiểm tra</SelectItem>
+                      <SelectContent>
+                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                        <SelectItem value="true">Đã hoàn thành</SelectItem>
+                        <SelectItem value="false">Đang kiểm tra</SelectItem>
+                      </SelectContent>
                     </SelectContent>
                   </Select>
                 </div>
