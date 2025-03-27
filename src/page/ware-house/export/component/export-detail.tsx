@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Table,
   TableBody,
@@ -74,7 +76,6 @@ export function ExportDetail({
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] =
     useState<ExportReceiptDetail | null>(null);
-  const [approvalQuantity, setApprovalQuantity] = useState<number>(0);
 
   const token = sessionStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -126,20 +127,18 @@ export function ExportDetail({
   // Mở dialog duyệt đơn
   const openApprovalDialog = (detail: ExportReceiptDetail) => {
     setSelectedDetail(detail);
-    setApprovalQuantity(detail.quantity); // Mặc định là số lượng yêu cầu
     setIsApprovalDialogOpen(true);
   };
 
-  // Xử lý duyệt đơn - Cập nhật để chỉ sử dụng ID
+  // Xử lý duyệt đơn - Cập nhật để sử dụng exportWarehouseReceiptId
   const handleApprove = async () => {
     if (!selectedDetail) return;
-    console.log(approvalQuantity);
-
+    setIsLoading(false);
     setIsApproving(true);
     try {
-      // Gọi API duyệt đơn chỉ với ID
+      // Gọi API duyệt đơn với exportWarehouseReceiptId
       const response = await axios.put(
-        `${API_URL}export-receipts/${selectedDetail.exportWarehouseReceiptDetailId}/approve`,
+        `${API_URL}export-receipts/${exportData.exportWarehouseReceiptId}/approve`,
         {},
         {
           headers: {
@@ -148,7 +147,7 @@ export function ExportDetail({
           },
         }
       );
-      setIsLoading(false);
+
       if (
         response.status === 200 ||
         response.status === 201 ||
@@ -275,9 +274,6 @@ export function ExportDetail({
                   <TableHead className="text-center">Số lượng</TableHead>
                   <TableHead className="text-center">Đơn giá</TableHead>
                   <TableHead className="text-right">Thành tiền</TableHead>
-                  {canApprove && (
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -310,18 +306,6 @@ export function ExportDetail({
                     <TableCell className="text-right font-medium">
                       {item.totalProductAmount.toLocaleString()} đ
                     </TableCell>
-                    {canApprove && (
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openApprovalDialog(item)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Duyệt
-                        </Button>
-                      </TableCell>
-                    )}
                   </TableRow>
                 ))}
                 <TableRow>
@@ -367,30 +351,40 @@ export function ExportDetail({
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Duyệt đơn xuất kho</DialogTitle>
-            <DialogDescription>Xác nhận duyệt sản phẩm này?</DialogDescription>
+            <DialogDescription>
+              Xác nhận duyệt phiếu xuất này?
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="productName" className="text-right">
-                Sản phẩm
+              <Label htmlFor="exportId" className="text-right">
+                Mã phiếu xuất
               </Label>
               <div className="col-span-3 font-medium">
-                {selectedDetail?.productName}
+                {exportData.exportWarehouseReceiptId}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="requestedQuantity" className="text-right">
-                Số lượng
+              <Label htmlFor="documentNumber" className="text-right">
+                Số phiếu
+              </Label>
+              <div className="col-span-3">{exportData.documentNumber}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="totalQuantity" className="text-right">
+                Tổng số lượng
               </Label>
               <div className="col-span-3">
-                {selectedDetail?.quantity.toLocaleString()}
+                {exportData.totalQuantity.toLocaleString()}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="productId" className="text-right">
-                Mã sản phẩm
+              <Label htmlFor="totalAmount" className="text-right">
+                Tổng giá trị
               </Label>
-              <div className="col-span-3">{selectedDetail?.productId}</div>
+              <div className="col-span-3">
+                {exportData.totalAmount.toLocaleString()} đ
+              </div>
             </div>
           </div>
           <DialogFooter>
