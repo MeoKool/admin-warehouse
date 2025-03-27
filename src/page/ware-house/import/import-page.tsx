@@ -224,7 +224,7 @@ export default function ImportPage() {
               Tạo phiếu nhập
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
+          <DialogContent className="sm:max-w-[1000px]">
             <DialogHeader>
               <DialogTitle>Tạo phiếu nhập sản phẩm</DialogTitle>
               <DialogDescription>
