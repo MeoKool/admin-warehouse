@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -23,7 +25,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Package, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  Filter,
+  Package,
+  AlertCircle,
+  Calculator,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 import axios from "axios";
 
 interface InventoryItem {
@@ -35,6 +55,7 @@ interface InventoryItem {
   batchCode: string;
   expirationDate: string;
   quantity: number;
+  price: number;
   status: string;
 }
 
@@ -59,36 +80,44 @@ export default function InventoryPage() {
   const warehouseId = sessionStorage.getItem("warehouseId") || "8";
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  // Fetch inventory data
-  useEffect(() => {
-    const fetchInventory = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(`${API_URL}${warehouseId}/products`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<InventoryItem | null>(
+    null
+  );
+  const [profitMargin, setProfitMargin] = useState<string>("10");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-        if (Array.isArray(response.data)) {
-          setInventoryItems(response.data);
-          setFilteredItems(response.data);
-          generateProductSummaries(response.data);
-        } else {
-          setInventoryItems([]);
-          setFilteredItems([]);
-          setProductSummaries([]);
-        }
-      } catch (error) {
-        console.error("Error fetching inventory:", error);
+  // Fetch inventory data
+  const fetchInventory = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}${warehouseId}/products`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (Array.isArray(response.data)) {
+        setInventoryItems(response.data);
+        setFilteredItems(response.data);
+        generateProductSummaries(response.data);
+      } else {
         setInventoryItems([]);
         setFilteredItems([]);
         setProductSummaries([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      toast.error("Không thể tải dữ liệu kho hàng");
+      setInventoryItems([]);
+      setFilteredItems([]);
+      setProductSummaries([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchInventory();
   }, [API_URL, token, warehouseId]);
 
@@ -138,7 +167,6 @@ export default function InventoryPage() {
         (statusFilter === "pending" && item.status === "PENDING") ||
         (statusFilter === "calculating" &&
           item.status === "CALCULATING_PRICE") ||
-        (statusFilter === "active" && item.status === "ACTIVE") ||
         (statusFilter === "empty" && item.status === "");
 
       return matchesSearch && matchesStatus;
@@ -154,7 +182,6 @@ export default function InventoryPage() {
       return new Date(dateString).toLocaleDateString("vi-VN");
     } catch (error) {
       console.log("Error formatting date:", error);
-
       return "N/A";
     }
   };
@@ -171,15 +198,6 @@ export default function InventoryPage() {
             Chờ xử lý
           </Badge>
         );
-      case "ACTIVE":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-400"
-          >
-            Đã tính giá
-          </Badge>
-        );
       case "CALCULATING_PRICE":
         return (
           <Badge
@@ -189,7 +207,15 @@ export default function InventoryPage() {
             Đang tính giá
           </Badge>
         );
-
+      case "ACTIVE":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200"
+          >
+            Đã duyệt
+          </Badge>
+        );
       default:
         return (
           <Badge
@@ -208,6 +234,51 @@ export default function InventoryPage() {
     const threeMonthsFromNow = new Date();
     threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
     return expiryDate <= threeMonthsFromNow;
+  };
+
+  const openPricingDialog = (item: InventoryItem) => {
+    setSelectedBatch(item);
+    setProfitMargin("10"); // Giá trị mặc định
+    setIsPricingDialogOpen(true);
+  };
+
+  const handleUpdateProfitMargin = async () => {
+    if (!selectedBatch) return;
+
+    // Validate input
+    const marginValue = Number.parseFloat(profitMargin);
+    if (isNaN(marginValue) || marginValue <= 0 || marginValue > 100) {
+      toast.error("Tỷ lệ lợi nhuận phải là số dương và không vượt quá 100%");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.put(
+        `${API_URL}batch/update-profit-margin/${selectedBatch.batchId}/${marginValue}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 204) {
+        toast.success("Cập nhật tỷ lệ lợi nhuận thành công");
+        setIsPricingDialogOpen(false);
+
+        // Refresh inventory data
+        fetchInventory();
+      } else {
+        throw new Error("Không thể cập nhật tỷ lệ lợi nhuận");
+      }
+    } catch (error) {
+      console.error("Error updating profit margin:", error);
+      toast.error("Không thể cập nhật tỷ lệ lợi nhuận. Vui lòng thử lại sau.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -247,7 +318,7 @@ export default function InventoryPage() {
               {
                 inventoryItems.filter((item) => item.status === "PENDING")
                   .length
-              }
+              }{" "}
               lô đang chờ xử lý
             </p>
           </CardContent>
@@ -297,7 +368,7 @@ export default function InventoryPage() {
                   <SelectItem value="all">Tất cả trạng thái</SelectItem>
                   <SelectItem value="pending">Chờ xử lý</SelectItem>
                   <SelectItem value="calculating">Đang tính giá</SelectItem>
-                  <SelectItem value="active">Đã tính giá</SelectItem>
+                  <SelectItem value="empty">Mới</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -315,13 +386,15 @@ export default function InventoryPage() {
                 <TableHead>Mã lô</TableHead>
                 <TableHead>Hạn sử dụng</TableHead>
                 <TableHead>Số lượng</TableHead>
+                <TableHead>Giá tiền đã tính giá</TableHead>
                 <TableHead>Trạng thái</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24">
                     <div className="flex justify-center items-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                       <span className="ml-3">Đang tải...</span>
@@ -330,7 +403,7 @@ export default function InventoryPage() {
                 </TableRow>
               ) : filteredItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24">
                     Không tìm thấy sản phẩm nào
                   </TableCell>
                 </TableRow>
@@ -356,7 +429,27 @@ export default function InventoryPage() {
                       </div>
                     </TableCell>
                     <TableCell>{item.quantity.toLocaleString()}</TableCell>
+                    <TableCell>
+                      {item.price != null
+                        ? item.price.toLocaleString("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          })
+                        : "N/A"}
+                    </TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
+                    <TableCell>
+                      {item.status === "CALCULATING_PRICE" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openPricingDialog(item)}
+                        >
+                          <Calculator className="h-4 w-4 mr-1" />
+                          Tính giá
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -364,6 +457,68 @@ export default function InventoryPage() {
           </Table>
         </CardContent>
       </Card>
+      {/* Dialog tính giá */}
+      <Dialog open={isPricingDialogOpen} onOpenChange={setIsPricingDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Tính giá sản phẩm</DialogTitle>
+            <DialogDescription>
+              Nhập tỷ lệ lợi nhuận (%) cho sản phẩm {selectedBatch?.productName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="productName" className="text-right">
+                Sản phẩm
+              </Label>
+              <div className="col-span-3 font-medium">
+                {selectedBatch?.productName}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="batchCode" className="text-right">
+                Mã lô
+              </Label>
+              <div className="col-span-3">{selectedBatch?.batchCode}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="profitMargin" className="text-right">
+                Tỷ lệ lợi nhuận (%)
+              </Label>
+              <Input
+                id="profitMargin"
+                type="number"
+                min="1"
+                max="100"
+                className="col-span-3"
+                value={profitMargin}
+                onChange={(e) => setProfitMargin(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsPricingDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button onClick={handleUpdateProfitMargin} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Xác nhận
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
