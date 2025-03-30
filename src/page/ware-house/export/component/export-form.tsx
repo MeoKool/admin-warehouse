@@ -28,18 +28,18 @@ interface ExportFormProps {
   onClose: () => void;
 }
 
-// Interface cho dữ liệu form theo cấu trúc JSON mới
+// Cập nhật interface cho dữ liệu form: đổi requestExportId -> warehouseRequestExportId
 interface ExportFormData {
   documentNumber: string;
   documentDate: string;
   exportDate: string;
   exportType: string;
   warehouseId: number | string;
-  requestExportId: number | null;
+  warehouseRequestExportId: number | null;
   note: string;
 }
 
-// Interface cho item theo cấu trúc JSON mới
+// Interface cho item xuất kho
 interface ExportItem {
   warehouseProductId: number;
   productId: number;
@@ -51,7 +51,7 @@ interface ExportItem {
   expiryDate: string;
 }
 
-// Interface for inventory items from API
+// Interface cho inventory items từ API
 interface InventoryItem {
   warehouseProductId: number;
   productId: number;
@@ -66,16 +66,19 @@ interface InventoryItem {
   price?: number;
 }
 
-// Interface for request export items
+// Interface cho request export items
 interface RequestExportItem {
   warehouseRequestExportId: number;
   requestExportId: number;
   productId: number;
   quantityRequested: number;
   remainingQuantity: number;
+  productName: string;
+  orderCode: string;
+  agencyName: string;
+  status: string;
 }
 
-// Các loại xuất kho
 const EXPORT_TYPES = [
   "Xuất hàng",
   "Xuất trả",
@@ -85,18 +88,18 @@ const EXPORT_TYPES = [
 ];
 
 export function ExportForm({ onClose }: ExportFormProps) {
-  // State cho form data theo cấu trúc mới
+  // State cho form data sử dụng warehouseRequestExportId
   const [formData, setFormData] = useState<ExportFormData>({
     documentNumber: `XK-${new Date().getTime().toString().slice(-6)}`,
     documentDate: new Date().toISOString().split("T")[0],
     exportDate: new Date().toISOString().split("T")[0],
     exportType: "Xuất hàng",
     warehouseId: "",
-    requestExportId: null,
+    warehouseRequestExportId: null,
     note: "",
   });
 
-  // State cho danh sách sản phẩm
+  // State cho danh sách sản phẩm xuất kho
   const [items, setItems] = useState<ExportItem[]>([]);
 
   // State cho inventory và request export
@@ -118,13 +121,13 @@ export function ExportForm({ onClose }: ExportFormProps) {
   const warehouseId = sessionStorage.getItem("warehouseId") || "8";
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  // Fetch inventory data and request exports when component mounts
+  // Fetch inventory và request export khi component mount
   useEffect(() => {
     fetchInventory();
     fetchRequestExports();
   }, []);
 
-  // Fetch inventory data from API
+  // Lấy dữ liệu sản phẩm từ API
   const fetchInventory = async () => {
     setIsLoadingInventory(true);
     try {
@@ -135,7 +138,6 @@ export function ExportForm({ onClose }: ExportFormProps) {
       });
 
       if (Array.isArray(response.data)) {
-        // Add default unit and price if not provided by API
         const processedItems = response.data.map((item: InventoryItem) => ({
           ...item,
           unit: item.unit || "Cái",
@@ -144,7 +146,6 @@ export function ExportForm({ onClose }: ExportFormProps) {
         setInventoryItems(processedItems);
         setFilteredInventoryItems(processedItems);
 
-        // Sử dụng warehouseId trực tiếp từ session storage
         setFormData((prev) => ({
           ...prev,
           warehouseId: Number(warehouseId),
@@ -164,7 +165,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
     }
   };
 
-  // Fetch request exports from API
+  // Lấy danh sách request export từ API
   const fetchRequestExports = async () => {
     setIsLoadingRequestExports(true);
     try {
@@ -191,7 +192,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
     }
   };
 
-  // Filter inventory items based on search term
+  // Lọc sản phẩm theo từ khóa
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredInventoryItems(inventoryItems);
@@ -213,8 +214,9 @@ export function ExportForm({ onClose }: ExportFormProps) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Chỉnh sửa hàm handleSelectChange để xử lý warehouseRequestExportId
   const handleSelectChange = (name: string, value: string) => {
-    if (name === "requestExportId") {
+    if (name === "warehouseRequestExportId") {
       if (value === "none") {
         setFormData((prev) => ({ ...prev, [name]: null }));
       } else {
@@ -235,17 +237,14 @@ export function ExportForm({ onClose }: ExportFormProps) {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Cập nhật hàm updateItemQuantity để giới hạn số lượng không vượt quá số lượng có sẵn
+  // Hạn chế số lượng nhập không vượt quá số lượng tồn kho
   const updateItemQuantity = (index: number, quantity: number) => {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i === index) {
-          // Tìm sản phẩm tương ứng trong inventoryItems để lấy số lượng tối đa
           const inventoryItem = inventoryItems.find(
             (invItem) => invItem.warehouseProductId === item.warehouseProductId
           );
-
-          // Giới hạn số lượng không vượt quá số lượng có sẵn
           const maxQuantity = inventoryItem?.quantity || 1;
           const newQuantity = Math.min(Math.max(1, quantity), maxQuantity);
 
@@ -264,11 +263,9 @@ export function ExportForm({ onClose }: ExportFormProps) {
     );
   };
 
-  // Cập nhật hàm selectProduct để phù hợp với cấu trúc mới
   const selectProduct = (product: InventoryItem) => {
     if (selectedProductIndex === null) return;
 
-    // Check if product is already in the list
     const existingIndex = items.findIndex(
       (item) => item.warehouseProductId === product.warehouseProductId
     );
@@ -290,12 +287,10 @@ export function ExportForm({ onClose }: ExportFormProps) {
     };
 
     if (selectedProductIndex < items.length) {
-      // Replace existing item
       setItems((prev) =>
         prev.map((item, i) => (i === selectedProductIndex ? newItem : item))
       );
     } else {
-      // Add new item
       setItems((prev) => [...prev, newItem]);
     }
     toast.info(`Số lượng tối đa có thể xuất: ${product.quantity}`);
@@ -308,31 +303,29 @@ export function ExportForm({ onClose }: ExportFormProps) {
     return items.reduce((sum, item) => sum + item.totalProductAmount, 0);
   };
 
-  // Cập nhật hàm handleSubmit để phù hợp với cấu trúc mới
+  // Cập nhật handleSubmit để gửi warehouseRequestExportId thay vì requestExportId
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
     if (!formData.documentNumber || items.length === 0) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
 
-    // Check if all items have valid quantity
     const invalidItems = items.some((item) => item.quantity <= 0);
     if (invalidItems) {
       toast.error("Vui lòng kiểm tra lại số lượng sản phẩm");
       return;
     }
 
-    // Chuẩn bị dữ liệu theo đúng cấu trúc yêu cầu
     const exportData = {
       documentNumber: formData.documentNumber,
       documentDate: new Date(formData.documentDate).toISOString(),
       exportDate: new Date(formData.exportDate).toISOString(),
       exportType: formData.exportType,
       warehouseId: Number(warehouseId),
-      requestExportId: formData.requestExportId || 0,
+      // Gửi warehouseRequestExportId đã chọn (nếu chưa chọn sẽ chuyển thành 0)
+      warehouseRequestExportId: formData.warehouseRequestExportId || 0,
       details: items.map((item) => ({
         warehouseProductId: item.warehouseProductId,
         productId: item.productId,
@@ -345,14 +338,10 @@ export function ExportForm({ onClose }: ExportFormProps) {
       })),
     };
 
-    // Submit form data
     console.log("Form data:", exportData);
-
-    // Gửi dữ liệu lên API
     submitExportData(exportData);
   };
 
-  // Thêm hàm gửi dữ liệu lên API
   const submitExportData = async (exportData: any) => {
     setIsSubmitting(true);
     try {
@@ -369,7 +358,6 @@ export function ExportForm({ onClose }: ExportFormProps) {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Tạo phiếu xuất thành công");
-        // Đóng form sau khi tạo thành công
         onClose();
       } else {
         throw new Error("Không thể tạo phiếu xuất");
@@ -382,14 +370,13 @@ export function ExportForm({ onClose }: ExportFormProps) {
     }
   };
 
-  // Format date for display
+  // Hàm định dạng ngày hiển thị
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     try {
       return new Date(dateString).toLocaleDateString("vi-VN");
     } catch (error) {
       console.log("Error formatting date:", error);
-
       return "N/A";
     }
   };
@@ -397,6 +384,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="grid gap-6 py-4">
+        {/* Các trường thông tin chung */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="documentNumber">
@@ -463,12 +451,13 @@ export function ExportForm({ onClose }: ExportFormProps) {
           </div>
         </div>
 
+        {/* Chọn warehouseRequestExportId */}
         <div className="space-y-2">
-          <Label htmlFor="requestExportId">Yêu cầu xuất kho</Label>
+          <Label htmlFor="warehouseRequestExportId">Yêu cầu xuất kho</Label>
           <Select
-            value={formData.requestExportId?.toString() || ""}
+            value={formData.warehouseRequestExportId?.toString() || ""}
             onValueChange={(value) =>
-              handleSelectChange("requestExportId", value)
+              handleSelectChange("warehouseRequestExportId", value)
             }
           >
             <SelectTrigger>
@@ -487,10 +476,10 @@ export function ExportForm({ onClose }: ExportFormProps) {
               ) : (
                 requestExports.map((req) => (
                   <SelectItem
-                    key={req.requestExportId}
-                    value={req.requestExportId.toString()}
+                    key={req.warehouseRequestExportId}
+                    value={req.warehouseRequestExportId.toString()}
                   >
-                    Yêu cầu #{req.requestExportId}
+                    Yêu cầu #{req.warehouseRequestExportId} - {req.productName}
                   </SelectItem>
                 ))
               )}
@@ -498,6 +487,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
           </Select>
         </div>
 
+        {/* Danh sách sản phẩm */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label>
