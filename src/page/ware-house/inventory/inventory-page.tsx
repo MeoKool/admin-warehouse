@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -45,6 +46,14 @@ import {
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface InventoryItem {
   warehouseProductId: number;
@@ -76,6 +85,8 @@ export default function InventoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId") || "8";
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -99,7 +110,6 @@ export default function InventoryPage() {
 
       if (Array.isArray(response.data)) {
         setInventoryItems(response.data);
-        setFilteredItems(response.data);
         generateProductSummaries(response.data);
       } else {
         setInventoryItems([]);
@@ -125,11 +135,8 @@ export default function InventoryPage() {
   const generateProductSummaries = (items: InventoryItem[]) => {
     const productMap = new Map<number, ProductSummary>();
 
-    // Group by product
     items.forEach((item) => {
       const existingProduct = productMap.get(item.productId);
-
-      // Check if product is near expiry (within 3 months)
       const expiryDate = new Date(item.expirationDate);
       const threeMonthsFromNow = new Date();
       threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
@@ -155,7 +162,7 @@ export default function InventoryPage() {
     setProductSummaries(Array.from(productMap.values()));
   };
 
-  // Filter inventory items based on search term and status
+  // Filter and paginate inventory items
   useEffect(() => {
     const filtered = inventoryItems.filter((item) => {
       const matchesSearch =
@@ -172,8 +179,13 @@ export default function InventoryPage() {
       return matchesSearch && matchesStatus;
     });
 
-    setFilteredItems(filtered);
-  }, [searchTerm, statusFilter, inventoryItems]);
+    // Tính toán phân trang
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const paginatedItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+
+    setFilteredItems(paginatedItems);
+  }, [searchTerm, statusFilter, inventoryItems, currentPage, itemsPerPage]);
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -238,14 +250,13 @@ export default function InventoryPage() {
 
   const openPricingDialog = (item: InventoryItem) => {
     setSelectedBatch(item);
-    setProfitMargin("10"); // Giá trị mặc định
+    setProfitMargin("10");
     setIsPricingDialogOpen(true);
   };
 
   const handleUpdateProfitMargin = async () => {
     if (!selectedBatch) return;
 
-    // Validate input
     const marginValue = Number.parseFloat(profitMargin);
     if (isNaN(marginValue) || marginValue <= 0 || marginValue > 100) {
       toast.error("Tỷ lệ lợi nhuận phải là số dương và không vượt quá 100%");
@@ -258,17 +269,13 @@ export default function InventoryPage() {
         `${API_URL}batch/update-profit-margin/${selectedBatch.batchId}/${marginValue}`,
         {},
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (response.status === 200 || response.status === 204) {
         toast.success("Cập nhật tỷ lệ lợi nhuận thành công");
         setIsPricingDialogOpen(false);
-
-        // Refresh inventory data
         fetchInventory();
       } else {
         throw new Error("Không thể cập nhật tỷ lệ lợi nhuận");
@@ -346,8 +353,15 @@ export default function InventoryPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>Danh sách sản phẩm trong kho</CardTitle>
+          <div className="flex justify-between items-center flex-col sm:flex-row gap-3">
+            <div>
+              <CardTitle>Danh sách sản phẩm trong kho</CardTitle>
+              <CardDescription>
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, inventoryItems.length)} /{" "}
+                {inventoryItems.length} sản phẩm
+              </CardDescription>
+            </div>
             <div className="flex items-center space-x-2">
               <div className="relative w-[250px]">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -371,11 +385,25 @@ export default function InventoryPage() {
                   <SelectItem value="empty">Mới</SelectItem>
                 </SelectContent>
               </Select>
+              <Select
+                value={itemsPerPage.toString()}
+                onValueChange={(value) => {
+                  setItemsPerPage(parseInt(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <CardDescription>
-            Hiển thị {filteredItems.length} / {inventoryItems.length} sản phẩm
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -394,16 +422,16 @@ export default function InventoryPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">
+                  <TableCell colSpan={8} className="text-center h-24">
                     <div className="flex justify-center items-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                      <Loader2 className="h-8 w-8 animate-spin" />
                       <span className="ml-3">Đang tải...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : filteredItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24">
+                  <TableCell colSpan={8} className="text-center h-24">
                     Không tìm thấy sản phẩm nào
                   </TableCell>
                 </TableRow>
@@ -456,7 +484,110 @@ export default function InventoryPage() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter className="flex justify-between items-center border-t px-6 py-4">
+          <div className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+            {Math.min(currentPage * itemsPerPage, inventoryItems.length)} /{" "}
+            {inventoryItems.length} sản phẩm
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+
+              {currentPage > 3 && (
+                <>
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(1)}
+                      className="cursor-pointer"
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span>...</span>
+                  </PaginationItem>
+                </>
+              )}
+
+              {Array.from(
+                { length: Math.ceil(inventoryItems.length / itemsPerPage) },
+                (_, i) => i + 1
+              )
+                .slice(
+                  Math.max(0, currentPage - 3),
+                  Math.min(
+                    Math.ceil(inventoryItems.length / itemsPerPage),
+                    currentPage + 2
+                  )
+                )
+                .map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+              {currentPage <
+                Math.ceil(inventoryItems.length / itemsPerPage) - 2 && (
+                <>
+                  <PaginationItem>
+                    <span>...</span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() =>
+                        setCurrentPage(
+                          Math.ceil(inventoryItems.length / itemsPerPage)
+                        )
+                      }
+                      className="cursor-pointer"
+                    >
+                      {Math.ceil(inventoryItems.length / itemsPerPage)}
+                    </PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      Math.min(
+                        prev + 1,
+                        Math.ceil(inventoryItems.length / itemsPerPage)
+                      )
+                    )
+                  }
+                  className={
+                    currentPage ===
+                    Math.ceil(inventoryItems.length / itemsPerPage)
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </CardFooter>
       </Card>
+
       {/* Dialog tính giá */}
       <Dialog open={isPricingDialogOpen} onOpenChange={setIsPricingDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
