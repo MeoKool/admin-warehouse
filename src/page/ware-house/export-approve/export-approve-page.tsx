@@ -229,7 +229,7 @@ export default function ExportApprovalPage() {
   const handleSubmitApproval = async (approvalData: ApprovalData) => {
     try {
       const response = await axios.post(
-        `${API_URL}/WarehouseRequestExport/approve`,
+        `${API_URL}WarehouseRequestExport/approve`,
         approvalData,
         {
           headers: {

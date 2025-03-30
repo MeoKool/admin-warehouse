@@ -180,7 +180,7 @@ export default function ViewExportPage() {
     try {
       const promises = idsToFetch.map(async (productId) => {
         try {
-          const response = await axios.get(`${API_URL}/product/${productId}`, {
+          const response = await axios.get(`${API_URL}product/${productId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           return { id: productId, data: response.data };
@@ -353,7 +353,7 @@ export default function ViewExportPage() {
     setIsCreatingExport(true);
     try {
       const response = await axios.post(
-        `${API_URL}/export-receipts/create-from-request`,
+        `${API_URL}export-receipts/create-from-request`,
         null,
         {
           params: {
@@ -482,9 +482,9 @@ export default function ViewExportPage() {
       >
         <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex">
           <TabsTrigger value="all">Tất cả</TabsTrigger>
-          <TabsTrigger value="processing">Đang xử lý</TabsTrigger>
+          <TabsTrigger value="requested">Đang xử lý</TabsTrigger>
           <TabsTrigger value="approved">Hoàn thành</TabsTrigger>
-          <TabsTrigger value="cancelled">Đã hủy</TabsTrigger>
+          <TabsTrigger value="cancelled">Đang yêu cầu</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
@@ -514,7 +514,7 @@ export default function ViewExportPage() {
                       <SelectItem value="all">Tất cả trạng thái</SelectItem>
                       <SelectItem value="processing">Đang xử lý</SelectItem>
                       <SelectItem value="approved">Hoàn thành</SelectItem>
-                      <SelectItem value="cancelled">Đã hủy</SelectItem>
+                      <SelectItem value="requested">Đang yêu cầu</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select
