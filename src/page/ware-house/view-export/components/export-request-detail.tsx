@@ -46,6 +46,7 @@ interface RequestExport {
   approvedDate: string;
   note: string;
   requestExportDetails: RequestExportDetail[];
+  requestExportCode: string;
 }
 
 interface ExportRequestDetailProps {
@@ -137,7 +138,7 @@ export function ExportRequestDetail({
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Mã đơn hàng:</div>
                 <div className="text-sm font-mono text-xs">
-                  {request.orderId}
+                  {request.requestExportCode}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-1">

@@ -75,6 +75,7 @@ interface RequestExportDetail {
 
 // Interface cho yêu cầu xuất
 interface RequestExport {
+  requestExportCode: string;
   requestExportId: number;
   orderId: string;
   requestedBy: number;
@@ -372,7 +373,7 @@ export default function ViewExportPage() {
               <div className="flex items-center">
                 <FileText className="h-3 w-3 mr-1 text-muted-foreground" />
                 <span className="font-mono">
-                  {request.orderId.substring(0, 8)}...
+                  {request.requestExportCode}...
                 </span>
               </div>
             </CardDescription>
@@ -566,7 +567,7 @@ export default function ViewExportPage() {
                               <div className="flex items-center">
                                 <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                                 <span className="text-xs font-mono">
-                                  {request.orderId.substring(0, 8)}...
+                                  {request.requestExportCode}
                                 </span>
                               </div>
                             </TableCell>
@@ -1043,7 +1044,7 @@ export default function ViewExportPage() {
                       Mã đơn hàng:
                     </p>
                     <p className="font-mono text-xs">
-                      {selectedRequest.orderId}
+                      {selectedRequest.requestExportCode}
                     </p>
                   </div>
                   <div>
