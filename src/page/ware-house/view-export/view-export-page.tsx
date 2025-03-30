@@ -36,6 +36,8 @@ import {
   Filter,
   ClipboardList,
   FileOutput,
+  Building,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -84,6 +86,8 @@ interface RequestExport {
   approvedDate: string;
   note: string;
   requestExportDetails: RequestExportDetail[];
+  agencyName: string;
+  approvedByName: string;
 }
 
 export default function ViewExportPage() {
@@ -521,6 +525,10 @@ export default function ViewExportPage() {
                       <TableRow>
                         <TableHead className="w-[80px]">Mã YC</TableHead>
                         <TableHead className="w-[180px]">Mã đơn hàng</TableHead>
+                        <TableHead className="w-[180px]">Tên đại lý</TableHead>
+                        <TableHead className="w-[180px]">
+                          Người duyệt xuất kho
+                        </TableHead>
                         {!isTablet && <TableHead>Sản phẩm</TableHead>}
                         <TableHead className="text-center">
                           Ngày duyệt
@@ -569,6 +577,18 @@ export default function ViewExportPage() {
                                 <span className="text-xs font-mono">
                                   {request.requestExportCode}
                                 </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Building className="h-4 w-4 mr-2 text-gray-500" />
+                                {request.agencyName}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                                {request.approvedByName}
                               </div>
                             </TableCell>
                             {!isTablet && (
