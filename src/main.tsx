@@ -18,10 +18,13 @@ import { WarehouseLayout } from "./components/layout/warehouse-layout";
 import InventoryPage from "./page/ware-house/inventory/inventory-page";
 import ExportApprovalPage from "./page/ware-house/export-approve/export-approve-page";
 import ViewExportPage from "./page/ware-house/view-export/view-export-page";
+import SignalRListener from "./components/signalr/SignalRListener";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
+      <SignalRListener />
+
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
