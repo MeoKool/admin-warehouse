@@ -38,7 +38,7 @@ import {
   FileOutput,
   Building,
   User,
-  RefreshCcw, // icon refresh
+  RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -50,6 +50,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMediaQuery } from "@/components/hooks/use-media-query";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Import SignalR connection để lắng nghe sự kiện realtime
 import { connection } from "@/lib/signalr-client";
@@ -109,6 +117,8 @@ export default function ViewExportPage() {
     new Map()
   );
   const [isCreatingExport, setIsCreatingExport] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Check if screen is mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -130,11 +140,10 @@ export default function ViewExportPage() {
 
       if (Array.isArray(response.data)) {
         setExportRequests(response.data);
-        setFilteredRequests(response.data);
 
         // Tập hợp tất cả productId từ các yêu cầu
         const productIds = new Set<number>();
-        response.data.forEach((request) => {
+        response.data.forEach((request: RequestExport) => {
           request.requestExportDetails.forEach(
             (detail: RequestExportDetail) => {
               productIds.add(detail.productId);
@@ -171,7 +180,7 @@ export default function ViewExportPage() {
     try {
       const promises = idsToFetch.map(async (productId) => {
         try {
-          const response = await axios.get(`${API_URL}product/${productId}`, {
+          const response = await axios.get(`${API_URL}/product/${productId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           return { id: productId, data: response.data };
@@ -210,7 +219,7 @@ export default function ViewExportPage() {
   }, []);
 
   // ------------------
-  // Auto refresh khi nhận được sự kiện từ SignalR
+  // Auto refresh khi nhận được sự kiện từ SIGNALR
   // ------------------
   useEffect(() => {
     const handleNewExportRequest = () => {
@@ -224,7 +233,7 @@ export default function ViewExportPage() {
   }, []);
 
   // ------------------
-  // Filter export requests
+  // Filter and paginate export requests
   // ------------------
   useEffect(() => {
     const filtered = exportRequests.filter((req) => {
@@ -252,8 +261,21 @@ export default function ViewExportPage() {
       return matchesSearch && matchesStatus && matchesTab;
     });
 
-    setFilteredRequests(filtered);
-  }, [searchTerm, statusFilter, activeTab, exportRequests, productCache]);
+    // Tính toán phân trang
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const paginatedRequests = filtered.slice(indexOfFirstItem, indexOfLastItem);
+
+    setFilteredRequests(paginatedRequests);
+  }, [
+    searchTerm,
+    statusFilter,
+    activeTab,
+    exportRequests,
+    productCache,
+    currentPage,
+    itemsPerPage,
+  ]);
 
   // ------------------
   // Các hàm xử lý hiển thị
@@ -331,7 +353,7 @@ export default function ViewExportPage() {
     setIsCreatingExport(true);
     try {
       const response = await axios.post(
-        `${API_URL}export-receipts/create-from-request`,
+        `${API_URL}/export-receipts/create-from-request`,
         null,
         {
           params: {
@@ -344,7 +366,6 @@ export default function ViewExportPage() {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Đã tạo phiếu xuất kho thành công");
-        // Cập nhật trạng thái yêu cầu sau khi tạo phiếu
         setExportRequests((prevRequests) =>
           prevRequests.map((req) =>
             req.requestExportId === selectedRequest.requestExportId
@@ -462,7 +483,7 @@ export default function ViewExportPage() {
         <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex">
           <TabsTrigger value="all">Tất cả</TabsTrigger>
           <TabsTrigger value="processing">Đang xử lý</TabsTrigger>
-          <TabsTrigger value="Approved">Hoàn thành</TabsTrigger>
+          <TabsTrigger value="approved">Hoàn thành</TabsTrigger>
           <TabsTrigger value="cancelled">Đã hủy</TabsTrigger>
         </TabsList>
 
@@ -492,11 +513,27 @@ export default function ViewExportPage() {
                     <SelectContent>
                       <SelectItem value="all">Tất cả trạng thái</SelectItem>
                       <SelectItem value="processing">Đang xử lý</SelectItem>
-                      <SelectItem value="Approved">Hoàn thành</SelectItem>
+                      <SelectItem value="approved">Hoàn thành</SelectItem>
                       <SelectItem value="cancelled">Đã hủy</SelectItem>
                     </SelectContent>
                   </Select>
-                  {/* Nút refresh cho người dùng */}
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button variant="outline" onClick={fetchExportRequests}>
                     <RefreshCcw className="h-4 w-4 mr-2" />
                     Làm mới
@@ -551,7 +588,7 @@ export default function ViewExportPage() {
                       {isLoading ? (
                         <TableRow>
                           <TableCell
-                            colSpan={isTablet ? 6 : 7}
+                            colSpan={isTablet ? 8 : 9}
                             className="text-center h-24"
                           >
                             <div className="flex justify-center items-center">
@@ -563,7 +600,7 @@ export default function ViewExportPage() {
                       ) : filteredRequests.length === 0 ? (
                         <TableRow>
                           <TableCell
-                            colSpan={isTablet ? 6 : 7}
+                            colSpan={isTablet ? 8 : 9}
                             className="text-center h-24"
                           >
                             Không tìm thấy yêu cầu xuất kho nào
@@ -644,28 +681,119 @@ export default function ViewExportPage() {
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex justify-between border-t px-4 sm:px-6 py-4">
+            <CardFooter className="flex justify-between items-center border-t px-4 sm:px-6 py-4">
               <div className="text-sm text-muted-foreground">
-                Hiển thị {filteredRequests.length} / {exportRequests.length} yêu
-                cầu
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, exportRequests.length)} /{" "}
+                {exportRequests.length} yêu cầu
               </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    { length: Math.ceil(exportRequests.length / itemsPerPage) },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
+                      Math.min(
+                        Math.ceil(exportRequests.length / itemsPerPage),
+                        currentPage + 2
+                      )
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {currentPage <
+                    Math.ceil(exportRequests.length / itemsPerPage) - 2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.ceil(exportRequests.length / itemsPerPage)
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(exportRequests.length / itemsPerPage)}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(exportRequests.length / itemsPerPage)
+                          )
+                        )
+                      }
+                      className={
+                        currentPage ===
+                        Math.ceil(exportRequests.length / itemsPerPage)
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </CardFooter>
           </Card>
         </TabsContent>
 
-        {/* Các Tabs khác tương tự, bạn có thể áp dụng filter dựa trên trạng thái */}
+        {/* Các Tabs khác tương tự */}
         <TabsContent value="processing" className="space-y-4">
-          {/* Nội dung tương tự như tab "all" nhưng chỉ hiển thị các yêu cầu có status "processing" */}
           {/* ... */}
         </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          {/* Nội dung cho tab "completed" */}
+        <TabsContent value="approved" className="space-y-4">
           {/* ... */}
         </TabsContent>
-
         <TabsContent value="cancelled" className="space-y-4">
-          {/* Nội dung cho tab "cancelled" */}
           {/* ... */}
         </TabsContent>
       </Tabs>

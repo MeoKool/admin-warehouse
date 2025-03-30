@@ -60,6 +60,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+        <Route element={<ProtectedRoute allowedRoles={[5]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/accounts" replace />} />
+            <Route path="profile" element={<ProfilePage />} />
+
+            {/* 404 for non-existent admin routes */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Route>
 
         {/* Global 404 route - must be the last route */}
         <Route path="*" element={<NotFoundPage />} />
