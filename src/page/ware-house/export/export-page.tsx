@@ -576,7 +576,7 @@ export default function ExportPage() {
       </Tabs>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="w-full max-w-3xl sm:max-w-[800px]">
+        <DialogContent className="w-full max-w-3xl sm:max-w-[1000px]">
           <DialogHeader>
             <DialogTitle>Chi tiết phiếu xuất</DialogTitle>
             <DialogDescription>

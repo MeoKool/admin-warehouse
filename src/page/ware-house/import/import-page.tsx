@@ -606,7 +606,7 @@ export default function ImportPage() {
       </Tabs>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="sm:max-w-[1000px]">
           <DialogHeader>
             <DialogTitle>Chi tiết phiếu nhập</DialogTitle>
             <DialogDescription>

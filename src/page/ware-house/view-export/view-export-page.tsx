@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +35,7 @@ import {
   Calendar,
   Filter,
   ClipboardList,
+  FileOutput,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -100,12 +99,14 @@ export default function ViewExportPage() {
   const [productCache, setProductCache] = useState<Map<number, ProductDetail>>(
     new Map()
   );
+  const [isCreatingExport, setIsCreatingExport] = useState(false);
 
   // Check if screen is mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
   const token = sessionStorage.getItem("token");
+  const warehouseId = sessionStorage.getItem("warehouseId") || "3";
   const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   // Fetch export requests
@@ -254,7 +255,7 @@ export default function ViewExportPage() {
   // Get status badge
   const getStatusBadge = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === "completed") {
+    if (statusLower === "approved") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
           Hoàn thành
@@ -266,10 +267,10 @@ export default function ViewExportPage() {
           Đang xử lý
         </Badge>
       );
-    } else if (statusLower === "pending") {
+    } else if (statusLower === "requested") {
       return (
         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-          Chờ xử lý
+          Đang yêu cầu
         </Badge>
       );
     } else if (statusLower === "cancelled") {
@@ -310,6 +311,49 @@ export default function ViewExportPage() {
         return `${productName} (${detail.requestedQuantity})`;
       })
       .join(", ");
+  };
+
+  // Tạo phiếu xuất kho từ yêu cầu
+  const handleCreateExport = async () => {
+    if (!selectedRequest) return;
+
+    setIsCreatingExport(true);
+    try {
+      const response = await axios.post(
+        `${API_URL}export-receipts/create-from-request`,
+        null,
+        {
+          params: {
+            requestExportId: selectedRequest.requestExportId,
+            warehouseId: warehouseId,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Đã tạo phiếu xuất kho thành công");
+        // Cập nhật trạng thái của yêu cầu
+        setExportRequests((prevRequests) =>
+          prevRequests.map((req) =>
+            req.requestExportId === selectedRequest.requestExportId
+              ? { ...req, status: "PROCESSING" }
+              : req
+          )
+        );
+        // Đóng dialog
+        setIsDetailOpen(false);
+      } else {
+        throw new Error("Không thể tạo phiếu xuất kho");
+      }
+    } catch (error) {
+      console.error("Error creating export:", error);
+      toast.error("Không thể tạo phiếu xuất kho. Vui lòng thử lại sau.");
+    } finally {
+      setIsCreatingExport(false);
+    }
   };
 
   // Mobile card view for each request
@@ -409,7 +453,7 @@ export default function ViewExportPage() {
         <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex">
           <TabsTrigger value="all">Tất cả</TabsTrigger>
           <TabsTrigger value="processing">Đang xử lý</TabsTrigger>
-          <TabsTrigger value="completed">Hoàn thành</TabsTrigger>
+          <TabsTrigger value="Approved">Hoàn thành</TabsTrigger>
           <TabsTrigger value="cancelled">Đã hủy</TabsTrigger>
         </TabsList>
 
@@ -439,7 +483,7 @@ export default function ViewExportPage() {
                     <SelectContent>
                       <SelectItem value="all">Tất cả trạng thái</SelectItem>
                       <SelectItem value="processing">Đang xử lý</SelectItem>
-                      <SelectItem value="completed">Hoàn thành</SelectItem>
+                      <SelectItem value="Approved">Hoàn thành</SelectItem>
                       <SelectItem value="cancelled">Đã hủy</SelectItem>
                     </SelectContent>
                   </Select>
@@ -972,7 +1016,7 @@ export default function ViewExportPage() {
       {/* Dialog for viewing export request details */}
       {selectedRequest && (
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="sm:max-w-[800px]">
+          <DialogContent className="sm:max-w-[1000px]">
             <DialogHeader>
               <DialogTitle>Chi tiết yêu cầu xuất kho</DialogTitle>
               <DialogDescription>
@@ -1098,7 +1142,29 @@ export default function ViewExportPage() {
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex justify-between items-center">
+              <div>
+                {selectedRequest.status.toLowerCase() === "requested" && (
+                  <Button
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={handleCreateExport}
+                    disabled={isCreatingExport}
+                  >
+                    {isCreatingExport ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Đang xử lý...
+                      </>
+                    ) : (
+                      <>
+                        <FileOutput className="h-4 w-4 mr-2" />
+                        Làm đơn xuất kho
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
               <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
                 Đóng
               </Button>
