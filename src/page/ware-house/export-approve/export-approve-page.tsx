@@ -37,6 +37,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApproveExportDialog } from "./component/approve-export-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Interface cho dữ liệu yêu cầu xuất kho
 interface ExportRequest {
@@ -72,6 +80,8 @@ export default function ExportApprovalPage() {
   );
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId") || "3";
@@ -97,7 +107,6 @@ export default function ExportApprovalPage() {
       );
 
       if (Array.isArray(response.data)) {
-        // Map dữ liệu để thêm giá trị mặc định
         const formattedData: ExportRequest[] = response.data.map(
           (item: any) => ({
             warehouseRequestExportId: item.warehouseRequestExportId,
@@ -107,14 +116,13 @@ export default function ExportApprovalPage() {
             quantityRequested: item.quantityRequested,
             remainingQuantity: item.remainingQuantity,
             dateRequested: item.dateRequested || new Date().toISOString(),
-            status: item.status || "pending", // default status
+            status: item.status || "pending",
             agencyName: item.agencyName || "Chưa rõ đại lý",
             orderCode: item.orderCode || undefined,
           })
         );
 
         setExportRequests(formattedData);
-        setFilteredRequests(formattedData);
       } else {
         toast.error("Dữ liệu không hợp lệ");
         setExportRequests([]);
@@ -130,7 +138,7 @@ export default function ExportApprovalPage() {
     }
   };
 
-  // Filter export requests based on search term and status
+  // Filter and paginate export requests
   useEffect(() => {
     const filtered = exportRequests.filter((req) => {
       const matchesSearch =
@@ -156,8 +164,19 @@ export default function ExportApprovalPage() {
       return matchesSearch && matchesStatus && matchesTab;
     });
 
-    setFilteredRequests(filtered);
-  }, [searchTerm, statusFilter, activeTab, exportRequests]);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const paginatedRequests = filtered.slice(indexOfFirstItem, indexOfLastItem);
+
+    setFilteredRequests(paginatedRequests);
+  }, [
+    searchTerm,
+    statusFilter,
+    activeTab,
+    exportRequests,
+    currentPage,
+    itemsPerPage,
+  ]);
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -166,7 +185,6 @@ export default function ExportApprovalPage() {
       return new Date(dateString).toLocaleDateString("vi-VN");
     } catch (error) {
       console.log("Error parsing date:", error);
-
       return dateString;
     }
   };
@@ -211,7 +229,7 @@ export default function ExportApprovalPage() {
   const handleSubmitApproval = async (approvalData: ApprovalData) => {
     try {
       const response = await axios.post(
-        `${API_URL}WarehouseRequestExport/approve`,
+        `${API_URL}/WarehouseRequestExport/approve`,
         approvalData,
         {
           headers: {
@@ -227,7 +245,7 @@ export default function ExportApprovalPage() {
         response.status === 204
       ) {
         toast.success("Duyệt yêu cầu xuất kho thành công");
-        fetchExportRequests(); // Refresh data
+        fetchExportRequests();
         setIsApproveDialogOpen(false);
       } else {
         throw new Error("Không thể duyệt yêu cầu xuất kho");
@@ -237,6 +255,113 @@ export default function ExportApprovalPage() {
       toast.error("Không thể duyệt yêu cầu xuất kho. Vui lòng thử lại sau.");
     }
   };
+
+  // Reusable Table Component
+  const ExportRequestTable = ({
+    data,
+    showStatus = true,
+  }: {
+    data: ExportRequest[];
+    showStatus?: boolean;
+  }) => (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[80px]">Mã YC</TableHead>
+            <TableHead>Sản phẩm</TableHead>
+            <TableHead>Đại lý</TableHead>
+            <TableHead className="text-center">Ngày yêu cầu</TableHead>
+            <TableHead className="text-center">SL yêu cầu</TableHead>
+            <TableHead className="text-center">SL còn lại</TableHead>
+            {showStatus && (
+              <TableHead className="text-center">Trạng thái</TableHead>
+            )}
+            <TableHead className="text-right">Thao tác</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell
+                colSpan={showStatus ? 8 : 7}
+                className="text-center h-24"
+              >
+                <div className="flex justify-center items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-3">Đang tải...</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : data.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={showStatus ? 8 : 7}
+                className="text-center h-24"
+              >
+                Không tìm thấy yêu cầu xuất kho nào
+              </TableCell>
+            </TableRow>
+          ) : (
+            data.map((request) => (
+              <TableRow key={request.warehouseRequestExportId}>
+                <TableCell className="font-medium">
+                  {request.requestExportId}
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{request.productName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Mã SP: {request.productId}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>{request.agencyName}</TableCell>
+                <TableCell className="text-center">
+                  {formatDate(request.dateRequested)}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center">
+                    <Package className="h-4 w-4 mr-2 text-muted-foreground" />
+                    {request.quantityRequested.toLocaleString()}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center">
+                    <Package className="h-4 w-4 mr-2 text-muted-foreground" />
+                    {request.remainingQuantity.toLocaleString()}
+                  </div>
+                </TableCell>
+                {showStatus && (
+                  <TableCell className="text-center">
+                    {getStatusBadge(request.status)}
+                  </TableCell>
+                )}
+                <TableCell className="text-right">
+                  {request.status.toLowerCase() === "pending" ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
+                      onClick={() => handleApproveRequest(request)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Duyệt
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" disabled>
+                      <FileText className="h-4 w-4 mr-1" />
+                      Chi tiết
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -265,8 +390,18 @@ export default function ExportApprovalPage() {
         <TabsContent value="all" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle>Danh sách yêu cầu xuất kho</CardTitle>
+              <div className="flex justify-between items-center flex-col sm:flex-row gap-3">
+                <div>
+                  <CardTitle>Danh sách yêu cầu xuất kho</CardTitle>
+                  <CardDescription>
+                    Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      exportRequests.length
+                    )}{" "}
+                    / {exportRequests.length} yêu cầu
+                  </CardDescription>
+                </div>
                 <div className="flex items-center space-x-2">
                   <div className="relative w-[250px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -290,107 +425,130 @@ export default function ExportApprovalPage() {
                       <SelectItem value="rejected">Từ chối</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Mã YC</TableHead>
-                      <TableHead>Sản phẩm</TableHead>
-                      <TableHead>Đại lý</TableHead>
-                      <TableHead className="text-center">
-                        Ngày yêu cầu
-                      </TableHead>
-                      <TableHead className="text-center">SL yêu cầu</TableHead>
-                      <TableHead className="text-center">SL còn lại</TableHead>
-                      <TableHead className="text-center">Trạng thái</TableHead>
-                      <TableHead className="text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center h-24">
-                          <div className="flex justify-center items-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-3">Đang tải...</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredRequests.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center h-24">
-                          Không tìm thấy yêu cầu xuất kho nào
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredRequests.map((request) => (
-                        <TableRow key={request.warehouseRequestExportId}>
-                          <TableCell className="font-medium">
-                            {request.requestExportId}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {request.productName}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Mã SP: {request.productId}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{request.agencyName}</TableCell>
-                          <TableCell className="text-center">
-                            {formatDate(request.dateRequested)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center">
-                              <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                              {request.quantityRequested.toLocaleString()}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center">
-                              <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                              {request.remainingQuantity.toLocaleString()}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {getStatusBadge(request.status)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {request.status.toLowerCase() === "pending" ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
-                                onClick={() => handleApproveRequest(request)}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Duyệt
-                              </Button>
-                            ) : (
-                              <Button variant="ghost" size="sm" disabled>
-                                <FileText className="h-4 w-4 mr-1" />
-                                Chi tiết
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <ExportRequestTable data={filteredRequests} />
             </CardContent>
             <CardFooter className="flex justify-between border-t px-6 py-4">
               <div className="text-sm text-muted-foreground">
-                Hiển thị {filteredRequests.length} / {exportRequests.length} yêu
-                cầu
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, exportRequests.length)} /{" "}
+                {exportRequests.length} yêu cầu
               </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    { length: Math.ceil(exportRequests.length / itemsPerPage) },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
+                      Math.min(
+                        Math.ceil(exportRequests.length / itemsPerPage),
+                        currentPage + 2
+                      )
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {currentPage <
+                    Math.ceil(exportRequests.length / itemsPerPage) - 2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.ceil(exportRequests.length / itemsPerPage)
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(exportRequests.length / itemsPerPage)}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(exportRequests.length / itemsPerPage)
+                          )
+                        )
+                      }
+                      className={
+                        currentPage ===
+                        Math.ceil(exportRequests.length / itemsPerPage)
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -400,87 +558,175 @@ export default function ExportApprovalPage() {
             <CardHeader>
               <CardTitle>Yêu cầu chờ duyệt</CardTitle>
               <CardDescription>
-                Danh sách các yêu cầu xuất kho đang chờ duyệt
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "pending"
+                  ).length
+                )}{" "}
+                /{" "}
+                {
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "pending"
+                  ).length
+                }{" "}
+                yêu cầu
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Mã YC</TableHead>
-                      <TableHead>Sản phẩm</TableHead>
-                      <TableHead>Đại lý</TableHead>
-                      <TableHead className="text-center">
-                        Ngày yêu cầu
-                      </TableHead>
-                      <TableHead className="text-center">SL yêu cầu</TableHead>
-                      <TableHead className="text-center">SL còn lại</TableHead>
-                      <TableHead className="text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center h-24">
-                          <div className="flex justify-center items-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-3">Đang tải...</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredRequests
-                        .filter((req) => req.status.toLowerCase() === "pending")
-                        .map((request) => (
-                          <TableRow key={request.warehouseRequestExportId}>
-                            <TableCell className="font-medium">
-                              {request.requestExportId}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {request.productName}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Mã SP: {request.productId}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{request.agencyName}</TableCell>
-                            <TableCell className="text-center">
-                              {formatDate(request.dateRequested)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.quantityRequested.toLocaleString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.remainingQuantity.toLocaleString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
-                                onClick={() => handleApproveRequest(request)}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Duyệt
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <ExportRequestTable
+                data={filteredRequests.filter(
+                  (req) => req.status.toLowerCase() === "pending"
+                )}
+                showStatus={false}
+              />
             </CardContent>
+            <CardFooter className="flex justify-between border-t px-6 py-4">
+              <div className="text-sm text-muted-foreground">
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "pending"
+                  ).length
+                )}{" "}
+                /{" "}
+                {
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "pending"
+                  ).length
+                }{" "}
+                yêu cầu
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    {
+                      length: Math.ceil(
+                        exportRequests.filter(
+                          (req) => req.status.toLowerCase() === "pending"
+                        ).length / itemsPerPage
+                      ),
+                    },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
+                      Math.min(
+                        Math.ceil(
+                          exportRequests.filter(
+                            (req) => req.status.toLowerCase() === "pending"
+                          ).length / itemsPerPage
+                        ),
+                        currentPage + 2
+                      )
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {currentPage <
+                    Math.ceil(
+                      exportRequests.filter(
+                        (req) => req.status.toLowerCase() === "pending"
+                      ).length / itemsPerPage
+                    ) -
+                      2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.ceil(
+                                exportRequests.filter(
+                                  (req) =>
+                                    req.status.toLowerCase() === "pending"
+                                ).length / itemsPerPage
+                              )
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(
+                            exportRequests.filter(
+                              (req) => req.status.toLowerCase() === "pending"
+                            ).length / itemsPerPage
+                          )}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(
+                              exportRequests.filter(
+                                (req) => req.status.toLowerCase() === "pending"
+                              ).length / itemsPerPage
+                            )
+                          )
+                        )
+                      }
+                      className={
+                        currentPage ===
+                        Math.ceil(
+                          exportRequests.filter(
+                            (req) => req.status.toLowerCase() === "pending"
+                          ).length / itemsPerPage
+                        )
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
           </Card>
         </TabsContent>
 
@@ -489,84 +735,175 @@ export default function ExportApprovalPage() {
             <CardHeader>
               <CardTitle>Yêu cầu đã duyệt</CardTitle>
               <CardDescription>
-                Danh sách các yêu cầu xuất kho đã được duyệt
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "approved"
+                  ).length
+                )}{" "}
+                /{" "}
+                {
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "approved"
+                  ).length
+                }{" "}
+                yêu cầu
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Mã YC</TableHead>
-                      <TableHead>Sản phẩm</TableHead>
-                      <TableHead>Đại lý</TableHead>
-                      <TableHead className="text-center">
-                        Ngày yêu cầu
-                      </TableHead>
-                      <TableHead className="text-center">SL yêu cầu</TableHead>
-                      <TableHead className="text-center">SL còn lại</TableHead>
-                      <TableHead className="text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center h-24">
-                          <div className="flex justify-center items-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-3">Đang tải...</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredRequests
-                        .filter(
-                          (req) => req.status.toLowerCase() === "approved"
-                        )
-                        .map((request) => (
-                          <TableRow key={request.warehouseRequestExportId}>
-                            <TableCell className="font-medium">
-                              {request.requestExportId}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {request.productName}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Mã SP: {request.productId}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{request.agencyName}</TableCell>
-                            <TableCell className="text-center">
-                              {formatDate(request.dateRequested)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.quantityRequested.toLocaleString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.remainingQuantity.toLocaleString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="sm">
-                                <FileText className="h-4 w-4 mr-1" />
-                                Chi tiết
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <ExportRequestTable
+                data={filteredRequests.filter(
+                  (req) => req.status.toLowerCase() === "approved"
+                )}
+                showStatus={false}
+              />
             </CardContent>
+            <CardFooter className="flex justify-between border-t px-6 py-4">
+              <div className="text-sm text-muted-foreground">
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "approved"
+                  ).length
+                )}{" "}
+                /{" "}
+                {
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "approved"
+                  ).length
+                }{" "}
+                yêu cầu
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    {
+                      length: Math.ceil(
+                        exportRequests.filter(
+                          (req) => req.status.toLowerCase() === "approved"
+                        ).length / itemsPerPage
+                      ),
+                    },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
+                      Math.min(
+                        Math.ceil(
+                          exportRequests.filter(
+                            (req) => req.status.toLowerCase() === "approved"
+                          ).length / itemsPerPage
+                        ),
+                        currentPage + 2
+                      )
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {currentPage <
+                    Math.ceil(
+                      exportRequests.filter(
+                        (req) => req.status.toLowerCase() === "approved"
+                      ).length / itemsPerPage
+                    ) -
+                      2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.ceil(
+                                exportRequests.filter(
+                                  (req) =>
+                                    req.status.toLowerCase() === "approved"
+                                ).length / itemsPerPage
+                              )
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(
+                            exportRequests.filter(
+                              (req) => req.status.toLowerCase() === "approved"
+                            ).length / itemsPerPage
+                          )}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(
+                              exportRequests.filter(
+                                (req) => req.status.toLowerCase() === "approved"
+                              ).length / itemsPerPage
+                            )
+                          )
+                        )
+                      }
+                      className={
+                        currentPage ===
+                        Math.ceil(
+                          exportRequests.filter(
+                            (req) => req.status.toLowerCase() === "approved"
+                          ).length / itemsPerPage
+                        )
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
           </Card>
         </TabsContent>
 
@@ -575,84 +912,175 @@ export default function ExportApprovalPage() {
             <CardHeader>
               <CardTitle>Yêu cầu bị từ chối</CardTitle>
               <CardDescription>
-                Danh sách các yêu cầu xuất kho đã bị từ chối
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "rejected"
+                  ).length
+                )}{" "}
+                /{" "}
+                {
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "rejected"
+                  ).length
+                }{" "}
+                yêu cầu
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Mã YC</TableHead>
-                      <TableHead>Sản phẩm</TableHead>
-                      <TableHead>Đại lý</TableHead>
-                      <TableHead className="text-center">
-                        Ngày yêu cầu
-                      </TableHead>
-                      <TableHead className="text-center">SL yêu cầu</TableHead>
-                      <TableHead className="text-center">SL còn lại</TableHead>
-                      <TableHead className="text-right">Thao tác</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center h-24">
-                          <div className="flex justify-center items-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-3">Đang tải...</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredRequests
-                        .filter(
-                          (req) => req.status.toLowerCase() === "rejected"
-                        )
-                        .map((request) => (
-                          <TableRow key={request.warehouseRequestExportId}>
-                            <TableCell className="font-medium">
-                              {request.requestExportId}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium">
-                                  {request.productName}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Mã SP: {request.productId}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{request.agencyName}</TableCell>
-                            <TableCell className="text-center">
-                              {formatDate(request.dateRequested)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.quantityRequested.toLocaleString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.remainingQuantity.toLocaleString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="sm">
-                                <FileText className="h-4 w-4 mr-1" />
-                                Chi tiết
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <ExportRequestTable
+                data={filteredRequests.filter(
+                  (req) => req.status.toLowerCase() === "rejected"
+                )}
+                showStatus={false}
+              />
             </CardContent>
+            <CardFooter className="flex justify-between border-t px-6 py-4">
+              <div className="text-sm text-muted-foreground">
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "rejected"
+                  ).length
+                )}{" "}
+                /{" "}
+                {
+                  exportRequests.filter(
+                    (req) => req.status.toLowerCase() === "rejected"
+                  ).length
+                }{" "}
+                yêu cầu
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    {
+                      length: Math.ceil(
+                        exportRequests.filter(
+                          (req) => req.status.toLowerCase() === "rejected"
+                        ).length / itemsPerPage
+                      ),
+                    },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
+                      Math.min(
+                        Math.ceil(
+                          exportRequests.filter(
+                            (req) => req.status.toLowerCase() === "rejected"
+                          ).length / itemsPerPage
+                        ),
+                        currentPage + 2
+                      )
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {currentPage <
+                    Math.ceil(
+                      exportRequests.filter(
+                        (req) => req.status.toLowerCase() === "rejected"
+                      ).length / itemsPerPage
+                    ) -
+                      2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.ceil(
+                                exportRequests.filter(
+                                  (req) =>
+                                    req.status.toLowerCase() === "rejected"
+                                ).length / itemsPerPage
+                              )
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(
+                            exportRequests.filter(
+                              (req) => req.status.toLowerCase() === "rejected"
+                            ).length / itemsPerPage
+                          )}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(
+                              exportRequests.filter(
+                                (req) => req.status.toLowerCase() === "rejected"
+                              ).length / itemsPerPage
+                            )
+                          )
+                        )
+                      }
+                      className={
+                        currentPage ===
+                        Math.ceil(
+                          exportRequests.filter(
+                            (req) => req.status.toLowerCase() === "rejected"
+                          ).length / itemsPerPage
+                        )
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
