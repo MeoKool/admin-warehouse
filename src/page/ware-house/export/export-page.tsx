@@ -54,6 +54,14 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { ExportDetail } from "./component/export-detail";
 import { ExportForm } from "./component/export-form";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Interfaces remain the same
 interface ExportReceipt {
@@ -97,6 +105,8 @@ export default function ExportPage() {
   const [exports, setExports] = useState<ExportReceipt[]>([]);
   const [isExportFormOpen, setIsExportFormOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId") || "8";
@@ -176,7 +186,7 @@ export default function ExportPage() {
     }
   };
 
-  // Filter exports based on search term, status, and active tab
+  // Filter and paginate exports based on search term, status, and active tab
   const filteredExports = exports.filter((exp) => {
     const matchesSearch =
       exp.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -199,6 +209,11 @@ export default function ExportPage() {
 
     return matchesSearch && matchesStatus && matchesTab;
   });
+
+  const paginatedExports = filteredExports.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleViewDetail = (exportItem: ExportReceipt) => {
     setSelectedExport(exportItem);
@@ -343,7 +358,7 @@ export default function ExportPage() {
           </Button>
           <Dialog open={isExportFormOpen} onOpenChange={setIsExportFormOpen}>
             <DialogTrigger asChild>
-              <Button className=" transition-colors">
+              <Button className="transition-colors">
                 <Plus className="mr-2 h-4 w-4" />
                 Tạo phiếu xuất
               </Button>
@@ -402,11 +417,12 @@ export default function ExportPage() {
                       : "Phiếu xuất đang xử lý"}
                   </CardTitle>
                   <CardDescription className="text-gray-600">
-                    {activeTab === "all"
-                      ? "Tất cả các phiếu xuất trong hệ thống"
-                      : activeTab === "completed"
-                      ? "Danh sách các phiếu xuất đã hoàn thành"
-                      : "Danh sách các phiếu xuất đang trong quá trình xử lý"}
+                    Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      filteredExports.length
+                    )}{" "}
+                    / {filteredExports.length} phiếu xuất
                   </CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
@@ -431,33 +447,153 @@ export default function ExportPage() {
                       <SelectItem value="pending">Đang xử lý</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px] border-gray-300">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <ExportTable data={filteredExports} />
+              <ExportTable data={paginatedExports} />
             </CardContent>
             <CardFooter className="flex justify-between border-t px-6 py-4 bg-gray-50">
               <div className="text-sm text-gray-600">
-                Hiển thị {filteredExports.length} / {exports.length} phiếu xuất
+                Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                {Math.min(currentPage * itemsPerPage, filteredExports.length)} /{" "}
+                {filteredExports.length} phiếu xuất
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-300 hover:bg-gray-100 transition-colors"
-                >
-                  <Printer className="mr-2 h-4 w-4" />
-                  In danh sách
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-300 hover:bg-gray-100 transition-colors"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Xuất Excel
-                </Button>
+              <div className="flex items-center gap-4">
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 hover:bg-gray-100 transition-colors"
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    In danh sách
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 hover:bg-gray-100 transition-colors"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Xuất Excel
+                  </Button>
+                </div>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : "cursor-pointer"
+                        }
+                      />
+                    </PaginationItem>
+
+                    {currentPage > 3 && (
+                      <>
+                        <PaginationItem>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(1)}
+                            className="cursor-pointer"
+                          >
+                            1
+                          </PaginationLink>
+                        </PaginationItem>
+                        <PaginationItem>
+                          <span>...</span>
+                        </PaginationItem>
+                      </>
+                    )}
+
+                    {Array.from(
+                      {
+                        length: Math.ceil(
+                          filteredExports.length / itemsPerPage
+                        ),
+                      },
+                      (_, i) => i + 1
+                    )
+                      .slice(
+                        Math.max(0, currentPage - 3),
+                        Math.min(
+                          Math.ceil(filteredExports.length / itemsPerPage),
+                          currentPage + 2
+                        )
+                      )
+                      .map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+
+                    {currentPage <
+                      Math.ceil(filteredExports.length / itemsPerPage) - 2 && (
+                      <>
+                        <PaginationItem>
+                          <span>...</span>
+                        </PaginationItem>
+                        <PaginationItem>
+                          <PaginationLink
+                            onClick={() =>
+                              setCurrentPage(
+                                Math.ceil(filteredExports.length / itemsPerPage)
+                              )
+                            }
+                            className="cursor-pointer"
+                          >
+                            {Math.ceil(filteredExports.length / itemsPerPage)}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </>
+                    )}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(
+                              prev + 1,
+                              Math.ceil(filteredExports.length / itemsPerPage)
+                            )
+                          )
+                        }
+                        className={
+                          currentPage ===
+                          Math.ceil(filteredExports.length / itemsPerPage)
+                            ? "pointer-events-none opacity-50"
+                            : "cursor-pointer"
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
             </CardFooter>
           </Card>
