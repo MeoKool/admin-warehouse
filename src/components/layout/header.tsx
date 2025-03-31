@@ -82,10 +82,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     const fetchUserData = async () => {
       try {
         // Lấy userId từ sessionStorage
-        // const userId = sessionStorage.getItem('userId');
-
-        // Sử dụng userId cố định cho demo
-        const userId = "bbe3f3ec-8c2a-46f1-b9ac-71e93a97384a";
+        const userId = sessionStorage.getItem("userId");
 
         if (userId) {
           const response = await axios.get(
