@@ -51,7 +51,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMediaQuery } from "@/components/hooks/use-media-query";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -64,6 +63,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { CustomDateRangePicker } from "@/components/ui/custom-date-range-picker";
 
 // Interface cho lịch sử thanh toán
 interface PaymentHistory {
@@ -514,17 +514,15 @@ export default function PaymentHistoryPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <DateRangePicker
+        <CustomDateRangePicker
           value={dateRange}
           onChange={(date) =>
             setDateRange({
               from: date?.from,
-              to: date?.to || undefined,
+              to: date?.to,
             })
           }
           placeholder="Chọn khoảng thời gian"
-          align="start"
-          locale={vi}
           className="w-full sm:w-auto"
         />
 
