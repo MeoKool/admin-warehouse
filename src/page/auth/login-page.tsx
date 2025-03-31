@@ -61,10 +61,12 @@ export default function LoginPage() {
     if (userRole) {
       const roleNumber = Number(userRole);
       // Redirect to appropriate dashboard based on role
-      if (roleNumber === 0) {
+      if (roleNumber === 1) {
         navigate("/admin");
       } else if (roleNumber === 4) {
         navigate("/warehouse");
+      } else if (roleNumber === 5) {
+        navigate("/accountant");
       }
     }
   }, [navigate]);
@@ -111,6 +113,9 @@ export default function LoginPage() {
       } else if (response.token.roleId === 3) {
         toast.success("Đăng nhập thành công");
         navigate("/warehouse");
+      } else if (response.token.roleId === 5) {
+        toast.success("Đăng nhập thành công");
+        navigate("/accountant");
       } else {
         toast.error("Tài khoản của bạn không được phép vào hệ thống");
         if (data.rememberMe) {

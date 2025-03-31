@@ -19,6 +19,8 @@ import InventoryPage from "./page/ware-house/inventory/inventory-page";
 import ExportApprovalPage from "./page/ware-house/export-approve/export-approve-page";
 import ViewExportPage from "./page/ware-house/view-export/view-export-page";
 import SignalRListener from "./components/signalr/SignalRListener";
+import PaymentHistoryPage from "./page/accountant/payment-history";
+import { AccountantLayout } from "./components/layout/accountant-layout";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -61,9 +63,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           </Route>
         </Route>
         <Route element={<ProtectedRoute allowedRoles={[5]} />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/accounts" replace />} />
-            <Route path="profile" element={<ProfilePage />} />
+          <Route path="/accountant" element={<AccountantLayout />}>
+            <Route
+              index
+              element={<Navigate to="/accountant/dashboard" replace />}
+            />
+            <Route path="dashboard" element={<PaymentHistoryPage />} />
+            <Route path="profile" element={<WarehouseProfile />} />
 
             {/* 404 for non-existent admin routes */}
             <Route path="*" element={<NotFoundPage />} />
