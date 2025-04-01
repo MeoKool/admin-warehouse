@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +52,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMediaQuery } from "@/components/hooks/use-media-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -64,6 +65,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { CustomDateRangePicker } from "@/components/ui/custom-date-range-picker";
+
+import { useMediaQuery } from "@/components/hooks/use-media-query";
 
 // Interface cho lịch sử thanh toán
 interface PaymentHistory {
@@ -81,6 +84,7 @@ interface PaymentHistory {
   paymentAmount: number;
   createdAt: string;
   updatedAt: string;
+  transactionReference: string;
 }
 
 export default function PaymentHistoryPage() {
@@ -109,6 +113,7 @@ export default function PaymentHistoryPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
 
   // Check if screen is mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -131,8 +136,19 @@ export default function PaymentHistoryPage() {
       });
 
       if (Array.isArray(response.data)) {
-        setPaymentHistories(response.data);
-        setFilteredHistories(response.data);
+        // Simulate adding transactionReferenceAttachment to some records for demo
+        const enhancedData = response.data.map((item: PaymentHistory) => {
+          // Add attachment to some records based on certain conditions
+          if (item.paymentMethod === "PayOS" && Math.random() > 0.5) {
+            return {
+              ...item,
+            };
+          }
+          return item;
+        });
+
+        setPaymentHistories(enhancedData);
+        setFilteredHistories(enhancedData);
       } else {
         toast.error("Dữ liệu không hợp lệ");
         setPaymentHistories([]);
@@ -155,7 +171,11 @@ export default function PaymentHistoryPage() {
       const matchesSearch =
         history.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         history.agencyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        history.serieNumber.toLowerCase().includes(searchTerm.toLowerCase());
+        history.serieNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (history.transactionReference &&
+          history.transactionReference
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()));
 
       // Lọc theo trạng thái
       const matchesStatus =
@@ -300,7 +320,7 @@ export default function PaymentHistoryPage() {
     try {
       // Fetch detailed information if needed
       const response = await axios.get(
-        `${API_URL}PaymentHistory/${history.paymentHistoryId}`,
+        `${API_URL}PaymentHistory/Payment-History-id/${history.paymentHistoryId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -486,6 +506,16 @@ export default function PaymentHistoryPage() {
               </p>
             </div>
           </div>
+          {history.transactionReference && (
+            <div>
+              <p className="text-muted-foreground text-xs">Mã giao dịch:</p>
+              <div className="flex items-center">
+                <p className="font-mono text-xs mr-2">
+                  {history.transactionReference}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter className="pt-2">
@@ -640,6 +670,9 @@ export default function PaymentHistoryPage() {
                         </TableHead>
                         <TableHead className="text-right">Còn nợ</TableHead>
                         <TableHead className="text-center">
+                          Mã giao dịch
+                        </TableHead>
+                        <TableHead className="text-center">
                           Trạng thái
                         </TableHead>
                         <TableHead className="text-right">Thao tác</TableHead>
@@ -648,7 +681,7 @@ export default function PaymentHistoryPage() {
                     <TableBody>
                       {isLoading ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center h-24">
+                          <TableCell colSpan={9} className="text-center h-24">
                             <div className="flex justify-center items-center">
                               <Loader2 className="h-8 w-8 animate-spin text-primary" />
                               <span className="ml-3">Đang tải...</span>
@@ -657,7 +690,7 @@ export default function PaymentHistoryPage() {
                         </TableRow>
                       ) : filteredHistories.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center h-24">
+                          <TableCell colSpan={9} className="text-center h-24">
                             Không tìm thấy lịch sử thanh toán nào
                           </TableCell>
                         </TableRow>
@@ -690,6 +723,17 @@ export default function PaymentHistoryPage() {
                             </TableCell>
                             <TableCell className="text-right font-medium text-red-600">
                               {formatCurrency(history.remainingDebtAmount)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {history.transactionReference ? (
+                                <div className="flex items-center justify-center">
+                                  <span className="font-mono text-xs mr-2">
+                                    {history.transactionReference}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
                             </TableCell>
                             <TableCell className="text-center">
                               {getStatusBadge(history.status)}
@@ -841,6 +885,18 @@ export default function PaymentHistoryPage() {
                       {getPaymentMethodBadge(selectedHistory.paymentMethod)}
                     </div>
                   </div>
+                  {selectedHistory.transactionReference && (
+                    <div className="sm:col-span-2">
+                      <p className="text-sm text-muted-foreground">
+                        Mã tham chiếu giao dịch:
+                      </p>
+                      <div className="flex items-center">
+                        <p className="font-mono">
+                          {selectedHistory.transactionReference}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -925,6 +981,30 @@ export default function PaymentHistoryPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Dialog for viewing attachment */}
+      <Dialog
+        open={isAttachmentDialogOpen}
+        onOpenChange={setIsAttachmentDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Tệp đính kèm giao dịch</DialogTitle>
+            <DialogDescription>
+              Xem tệp đính kèm cho mã tham chiếu giao dịch
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAttachmentDialogOpen(false)}
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
