@@ -21,6 +21,7 @@ import ViewExportPage from "./page/ware-house/view-export/view-export-page";
 import SignalRListener from "./components/signalr/SignalRListener";
 import PaymentHistoryPage from "./page/accountant/payment-history";
 import { AccountantLayout } from "./components/layout/accountant-layout";
+import { PlannerLayout } from "./components/layout/planner-layout";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -75,7 +76,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+        <Route element={<ProtectedRoute allowedRoles={[6]} />}>
+          <Route path="/planner" element={<PlannerLayout />}>
+            <Route
+              index
+              element={<Navigate to="/planner/dashboard" replace />}
+            />
+            <Route path="dashboard" element={<NotFoundPage />} />
+            <Route path="profile" element={<NotFoundPage />} />
 
+            {/* 404 for non-existent admin routes */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Route>
         {/* Global 404 route - must be the last route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

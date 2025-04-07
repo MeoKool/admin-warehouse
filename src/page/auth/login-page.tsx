@@ -67,6 +67,8 @@ export default function LoginPage() {
         navigate("/warehouse");
       } else if (roleNumber === 5) {
         navigate("/accountant");
+      } else if (roleNumber === 6) {
+        navigate("/planner");
       }
     }
   }, [navigate]);
@@ -116,6 +118,9 @@ export default function LoginPage() {
       } else if (response.token.roleId === 5) {
         toast.success("Đăng nhập thành công");
         navigate("/accountant");
+      } else if (response.token.roleId === 6) {
+        toast.success("Đăng nhập thành công");
+        navigate("/planner");
       } else {
         toast.error("Tài khoản của bạn không được phép vào hệ thống");
         if (data.rememberMe) {
