@@ -84,7 +84,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               element={<Navigate to="/planner/dashboard" replace />}
             />
             <Route path="dashboard" element={<WarehousePlannerPage />} />
-            <Route path="profile" element={<NotFoundPage />} />
+            <Route path="view-product" element={<NotFoundPage />} />
 
             {/* 404 for non-existent admin routes */}
             <Route path="*" element={<NotFoundPage />} />

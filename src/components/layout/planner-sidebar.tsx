@@ -11,8 +11,8 @@ const menuItems = [
     icon: <BarChart3 className="h-5 w-5" />,
   },
   {
-    title: "Xem lịch sử giao dịch",
-    path: "/planner/view-export/",
+    title: "Xem snar phẩm trong kho",
+    path: "/planner/view-product",
     icon: <Eye className="h-5 w-5" />,
   },
 ];
