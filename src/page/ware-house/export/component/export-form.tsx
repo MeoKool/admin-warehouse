@@ -185,7 +185,6 @@ export function ExportForm({ onClose }: ExportFormProps) {
       }
     } catch (error) {
       console.error("Error fetching request exports:", error);
-      toast.error("Không thể tải danh sách yêu cầu xuất kho");
       setRequestExports([]);
     } finally {
       setIsLoadingRequestExports(false);
@@ -599,7 +598,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
       {/* Product Selector Dialog */}
       {isProductSelectorOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-[800px] max-h-[80vh] flex flex-col">
+          <div className="bg-white rounded-lg w-[1000px] max-h-[100vh] flex flex-col">
             <div className="p-4 border-b">
               <h3 className="text-lg font-semibold">Chọn sản phẩm từ kho</h3>
               <div className="mt-2 relative">

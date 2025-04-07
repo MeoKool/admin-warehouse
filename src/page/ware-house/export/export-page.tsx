@@ -136,7 +136,6 @@ export default function ExportPage() {
       }
     } catch (error) {
       console.error("Error fetching exports:", error);
-      toast.error("Không thể tải danh sách phiếu xuất");
     } finally {
       setIsLoading(false);
     }

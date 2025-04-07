@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   Search,
   FileText,
@@ -160,7 +160,6 @@ export default function ViewExportPage() {
       }
     } catch (error) {
       console.error("Error fetching export requests:", error);
-      toast.error("Không thể tải danh sách yêu cầu xuất kho");
       setExportRequests([]);
       setFilteredRequests([]);
     } finally {
@@ -480,13 +479,6 @@ export default function ViewExportPage() {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex">
-          <TabsTrigger value="all">Tất cả</TabsTrigger>
-          <TabsTrigger value="requested">Đang xử lý</TabsTrigger>
-          <TabsTrigger value="approved">Hoàn thành</TabsTrigger>
-          <TabsTrigger value="cancelled">Đang yêu cầu</TabsTrigger>
-        </TabsList>
-
         <TabsContent value="all" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">

@@ -130,7 +130,6 @@ export default function ExportApprovalPage() {
       }
     } catch (error) {
       console.error("Error fetching export requests:", error);
-      toast.error("Không thể tải danh sách yêu cầu xuất kho");
       setExportRequests([]);
       setFilteredRequests([]);
     } finally {

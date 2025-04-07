@@ -22,34 +22,9 @@ const menuItems = [
     icon: <BarChart3 className="h-5 w-5" />,
   },
   {
-    title: "Xem đơn xuất kho",
+    title: "Xem lịch sử giao dịch",
     path: "/accountant/view-export/",
     icon: <Eye className="h-5 w-5" />,
-  },
-  {
-    title: "Duyệt đơn xuất kho",
-    path: "/accountant/export/approval",
-    icon: <PackageCheck className="h-5 w-5" />,
-  },
-  {
-    title: "Xuất sản phẩm",
-    path: "/accountant/export",
-    icon: <PackageMinus className="h-5 w-5" />,
-  },
-  {
-    title: "Nhập sản phẩm",
-    path: "/accountant/import",
-    icon: <PackagePlus className="h-5 w-5" />,
-  },
-  {
-    title: "Kho hàng",
-    path: "/accountant/inventory",
-    icon: <Warehouse className="h-5 w-5" />,
-  },
-  {
-    title: "Hồ sơ",
-    path: "/accountant/profile",
-    icon: <User className="h-5 w-5" />,
   },
 ];
 
@@ -72,7 +47,7 @@ export function AccountantSidebar({
     >
       <div className="flex items-center justify-between mb-6">
         {!isCollapsed && (
-          <div className="text-xl font-bold">Quản lý đơn hàng</div>
+          <div className="text-xl font-bold">Quản lí giao dịch</div>
         )}
         <Button
           variant="ghost"
