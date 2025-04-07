@@ -1,8 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import { AdminLayout } from "@/components/layout/layout";
 import { ProtectedRoute } from "@/components/protected-route";
+import { toast } from "sonner"; // Đảm bảo sonner được import cho ProtectedLoginRoute
 import "./index.css";
 import AccountsPage from "./page/account/accounts-page";
 import ApprovePage from "./page/approve/approve-page";
@@ -22,8 +29,40 @@ import SignalRListener from "./components/signalr/SignalRListener";
 import PaymentHistoryPage from "./page/accountant/payment-history";
 import { AccountantLayout } from "./components/layout/accountant-layout";
 import { PlannerLayout } from "./components/layout/planner-layout";
-import WarehousePlannerPage from "./page/planner/warehouse-planner";
 import InventoryLookupPage from "./page/planner/inventory/inventory-lookup/page";
+import WarehousePlannerPage from "./page/planner/warehouse-planner";
+
+// Định nghĩa ProtectedLoginRoute trong cùng file hoặc import từ file riêng
+const ProtectedLoginRoute = () => {
+  const sessionToken = sessionStorage.getItem("token");
+  const localToken = localStorage.getItem("token");
+  const token = sessionToken || localToken;
+
+  const sessionRole = sessionStorage.getItem("Role");
+  const localRole = localStorage.getItem("Role");
+  const userRole = sessionRole || localRole;
+
+  if (token && userRole) {
+    const roleNumber = Number(userRole);
+    switch (roleNumber) {
+      case 1:
+        return <Navigate to="/admin" replace />;
+      case 3: // Sửa từ 4 thành 3 để khớp với route warehouse
+        return <Navigate to="/warehouse" replace />;
+      case 5:
+        return <Navigate to="/accountant" replace />;
+      case 6:
+        return <Navigate to="/planner" replace />;
+      default:
+        toast.error("Vai trò không hợp lệ, vui lòng đăng nhập lại");
+        sessionStorage.clear();
+        localStorage.clear();
+        return <Outlet />;
+    }
+  }
+
+  return <Outlet />;
+};
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -32,7 +71,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
+
+        {/* Bảo vệ trang login với ProtectedLoginRoute */}
+        <Route element={<ProtectedLoginRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+        </Route>
 
         {/* Protected Admin Routes */}
         <Route element={<ProtectedRoute allowedRoles={[1]} />}>
@@ -41,8 +84,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="accounts" element={<AccountsPage />} />
             <Route path="approve" element={<ApprovePage />} />
             <Route path="profile" element={<ProfilePage />} />
-
-            {/* 404 for non-existent admin routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
@@ -61,10 +102,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="export/approval" element={<ExportApprovalPage />} />
             <Route path="view-export" element={<ViewExportPage />} />
-            {/* 404 for non-existent warehouse routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+
+        {/* Protected Accountant Routes */}
         <Route element={<ProtectedRoute allowedRoles={[5]} />}>
           <Route path="/accountant" element={<AccountantLayout />}>
             <Route
@@ -73,11 +115,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             />
             <Route path="dashboard" element={<PaymentHistoryPage />} />
             <Route path="profile" element={<WarehouseProfile />} />
-
-            {/* 404 for non-existent admin routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+
+        {/* Protected Planner Routes */}
         <Route element={<ProtectedRoute allowedRoles={[6]} />}>
           <Route path="/planner" element={<PlannerLayout />}>
             <Route
@@ -86,11 +128,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             />
             <Route path="dashboard" element={<WarehousePlannerPage />} />
             <Route path="view-product" element={<InventoryLookupPage />} />
-
-            {/* 404 for non-existent admin routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+
         {/* Global 404 route - must be the last route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

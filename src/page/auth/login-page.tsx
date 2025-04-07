@@ -54,13 +54,17 @@ export default function LoginPage() {
 
   // Check if user is already logged in
   useEffect(() => {
+    const sessionToken = sessionStorage.getItem("token");
+    const localToken = localStorage.getItem("token");
+    const token = sessionToken || localToken;
+
     const sessionRole = sessionStorage.getItem("Role");
     const localRole = localStorage.getItem("Role");
     const userRole = sessionRole || localRole;
 
-    if (userRole) {
+    // If token exists, redirect based on role
+    if (token && userRole) {
       const roleNumber = Number(userRole);
-      // Redirect to appropriate dashboard based on role
       if (roleNumber === 1) {
         navigate("/admin");
       } else if (roleNumber === 4) {
