@@ -1,17 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import {
-  User,
-  PackageCheck,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Warehouse,
-  BarChart3,
-  PackagePlus,
-  PackageMinus,
-  Eye,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, BarChart3, Eye } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
