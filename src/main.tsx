@@ -22,6 +22,7 @@ import SignalRListener from "./components/signalr/SignalRListener";
 import PaymentHistoryPage from "./page/accountant/payment-history";
 import { AccountantLayout } from "./components/layout/accountant-layout";
 import { PlannerLayout } from "./components/layout/planner-layout";
+import WarehousePlannerPage from "./page/planner/warehouse-planner";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -82,7 +83,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               index
               element={<Navigate to="/planner/dashboard" replace />}
             />
-            <Route path="dashboard" element={<NotFoundPage />} />
+            <Route path="dashboard" element={<WarehousePlannerPage />} />
             <Route path="profile" element={<NotFoundPage />} />
 
             {/* 404 for non-existent admin routes */}

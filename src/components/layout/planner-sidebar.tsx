@@ -33,9 +33,7 @@ export function PlannerSidebar({ collapsed = false }: AccountantSidebarProps) {
       )}
     >
       <div className="flex items-center justify-between mb-6">
-        {!isCollapsed && (
-          <div className="text-xl font-bold">Quản lí giao dịch</div>
-        )}
+        {!isCollapsed && <div className="text-xl font-bold">Điều phối kho</div>}
         <Button
           variant="ghost"
           size="icon"
