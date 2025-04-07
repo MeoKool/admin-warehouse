@@ -23,6 +23,7 @@ import PaymentHistoryPage from "./page/accountant/payment-history";
 import { AccountantLayout } from "./components/layout/accountant-layout";
 import { PlannerLayout } from "./components/layout/planner-layout";
 import WarehousePlannerPage from "./page/planner/warehouse-planner";
+import InventoryLookupPage from "./page/planner/inventory/inventory-lookup/page";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -84,7 +85,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               element={<Navigate to="/planner/dashboard" replace />}
             />
             <Route path="dashboard" element={<WarehousePlannerPage />} />
-            <Route path="view-product" element={<NotFoundPage />} />
+            <Route path="view-product" element={<InventoryLookupPage />} />
 
             {/* 404 for non-existent admin routes */}
             <Route path="*" element={<NotFoundPage />} />
