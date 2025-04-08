@@ -15,28 +15,72 @@ import {
   Calendar,
   Package,
   ClipboardList,
+  Download,
 } from "lucide-react";
 import type { WarehouseTransfer } from "@/types/warehouse";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/utils/warehouse-utils"; // Only importing formatDate now
 import { TransferDetailsDialog } from "./transfer-details-dialog";
+import axios from "axios";
+import { toast } from "sonner";
 
 interface OutgoingTransfersProps {
   transfers: WarehouseTransfer[];
   isLoading: boolean;
+  onRefresh?: () => void; // Optional callback to refresh data after successful import
 }
 
 export function OutgoingTransfers({
   transfers,
   isLoading,
+  onRefresh,
 }: OutgoingTransfersProps) {
   const [selectedTransfer, setSelectedTransfer] =
     useState<WarehouseTransfer | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [processingTransferId, setProcessingTransferId] = useState<
+    number | null
+  >(null);
+
+  const token = sessionStorage.getItem("token");
+  const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   const handleViewDetails = (transfer: WarehouseTransfer) => {
     setSelectedTransfer(transfer);
     setIsDetailsOpen(true);
+  };
+
+  const handleImportTransfer = async (transferId: number) => {
+    setProcessingTransferId(transferId);
+    try {
+      const response = await axios.post(
+        `${API_URL}WarehouseReceipt/from-transfer`,
+        {
+          warehouseTransferRequestId: transferId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Nhập điều phối thành công");
+        // Refresh data if callback provided
+        if (onRefresh) {
+          onRefresh();
+        }
+      } else {
+        throw new Error("Không thể nhập điều phối");
+      }
+    } catch (error) {
+      console.error("Error importing transfer:", error);
+      toast.error("Không thể nhập điều phối. Vui lòng thử lại sau.");
+    } finally {
+      setProcessingTransferId(null);
+    }
   };
 
   // Inline function to get status badge styling and label
@@ -57,11 +101,11 @@ export function OutgoingTransfers({
       bgColor = "bg-yellow-100";
       hoverColor = "hover:bg-yellow-200";
       label = "Đang chờ";
-    } else if (statusLower === "processing") {
+    } else if (statusLower === "approved") {
       color = "text-blue-800";
       bgColor = "bg-blue-100";
       hoverColor = "hover:bg-blue-200";
-      label = "Đang xử lý";
+      label = "Đã phê duyệt";
     } else if (statusLower === "cancelled") {
       color = "text-red-800";
       bgColor = "bg-red-100";
@@ -111,8 +155,8 @@ export function OutgoingTransfers({
             <TableRow>
               <TableHead className="w-[150px]">Mã yêu cầu</TableHead>
               <TableHead className="w-[150px]">Mã đơn hàng</TableHead>
-              <TableHead>Kho nguồn</TableHead>
-              <TableHead>Kho đích</TableHead>
+              <TableHead>Kho chuyển</TableHead>
+              <TableHead>Kho yêu cầu</TableHead>
               <TableHead className="text-center">Ngày yêu cầu</TableHead>
               <TableHead className="text-center">Số sản phẩm</TableHead>
               <TableHead className="text-center">Trạng thái</TableHead>
@@ -131,8 +175,8 @@ export function OutgoingTransfers({
                 <TableCell>
                   <span>{transfer.orderCode || "N/A"}</span>
                 </TableCell>
-                <TableCell>Kho {transfer.sourceWarehouseId}</TableCell>
-                <TableCell>Kho {transfer.destinationWarehouseId}</TableCell>
+                <TableCell> {transfer.sourceWarehouseName}</TableCell>
+                <TableCell> {transfer.destinationWarehouseName}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -149,14 +193,38 @@ export function OutgoingTransfers({
                   {getStatusBadgeInline(transfer.status)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewDetails(transfer)}
-                  >
-                    <FileText className="h-4 w-4 mr-1" />
-                    Chi tiết
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(transfer)}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Chi tiết
+                    </Button>
+
+                    {transfer.status.toLowerCase() === "approved" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                        onClick={() => handleImportTransfer(transfer.id)}
+                        disabled={processingTransferId === transfer.id}
+                      >
+                        {processingTransferId === transfer.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-1" />
+                            Nhập điều phối
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

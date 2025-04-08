@@ -96,11 +96,11 @@ export function IncomingTransfers({
       bgColor = "bg-yellow-100";
       hoverColor = "hover:bg-yellow-200";
       label = "Đang chờ";
-    } else if (statusLower === "processing") {
+    } else if (statusLower === "planned") {
       color = "text-blue-800";
       bgColor = "bg-blue-100";
       hoverColor = "hover:bg-blue-200";
-      label = "Đang xử lý";
+      label = "Đã chọn kho";
     } else if (statusLower === "cancelled") {
       color = "text-red-800";
       bgColor = "bg-red-100";
@@ -156,6 +156,7 @@ export function IncomingTransfers({
               <TableHead className="w-[150px]">Mã yêu cầu</TableHead>
               <TableHead className="w-[150px]">Mã đơn hàng</TableHead>
               <TableHead>Kho nguồn</TableHead>
+              <TableHead>Kho đích</TableHead>
               <TableHead className="text-center">Ngày yêu cầu</TableHead>
               <TableHead className="text-center">Số sản phẩm</TableHead>
               <TableHead className="text-center">Trạng thái</TableHead>
@@ -174,7 +175,8 @@ export function IncomingTransfers({
                 <TableCell>
                   <span>{transfer.orderCode || "N/A"}</span>
                 </TableCell>
-                <TableCell>Kho {transfer.sourceWarehouseId}</TableCell>
+                <TableCell> {transfer.sourceWarehouseName}</TableCell>
+                <TableCell> {transfer.destinationWarehouseName}</TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />

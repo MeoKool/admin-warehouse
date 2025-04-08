@@ -127,6 +127,23 @@ export default function ExportApprovalPage() {
           })
         );
 
+        // Sort requests so that pending requests appear first
+        formattedData.sort((a, b) => {
+          if (
+            a.status.toLowerCase() === "pending" &&
+            b.status.toLowerCase() !== "pending"
+          ) {
+            return -1;
+          }
+          if (
+            a.status.toLowerCase() !== "pending" &&
+            b.status.toLowerCase() === "pending"
+          ) {
+            return 1;
+          }
+          return 0;
+        });
+
         setExportRequests(formattedData);
       } else {
         toast.error("Dữ liệu không hợp lệ");
@@ -347,17 +364,7 @@ export default function ExportApprovalPage() {
                   </TableCell>
                 )}
                 <TableCell className="text-right">
-                  {request.status.toLowerCase() === "pending" ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
-                      onClick={() => handleApproveRequest(request)}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Duyệt
-                    </Button>
-                  ) : (
+                  <div className="flex justify-end gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -368,7 +375,19 @@ export default function ExportApprovalPage() {
                       <FileText className="h-4 w-4 mr-1" />
                       Chi tiết
                     </Button>
-                  )}
+
+                    {request.status.toLowerCase() === "pending" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
+                        onClick={() => handleApproveRequest(request)}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Duyệt
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -384,9 +403,6 @@ export default function ExportApprovalPage() {
         <h2 className="text-2xl font-bold tracking-tight">
           Duyệt đơn xuất kho
         </h2>
-        <p className="text-muted-foreground">
-          Quản lý và duyệt các yêu cầu xuất kho
-        </p>
       </div>
 
       <Tabs

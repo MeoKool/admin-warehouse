@@ -152,10 +152,10 @@ export default function WarehousePlannerPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="completed">Hoàn thành</SelectItem>
                   <SelectItem value="pending">Đang chờ</SelectItem>
-                  <SelectItem value="processing">Đang xử lý</SelectItem>
-                  <SelectItem value="cancelled">Đã hủy</SelectItem>
+                  <SelectItem value="planned">Đã chọn kho</SelectItem>
+                  <SelectItem value="approved">Đã xuất kho</SelectItem>
+                  <SelectItem value="completed">Hoàn thành</SelectItem>
                 </SelectContent>
               </Select>
             </div>

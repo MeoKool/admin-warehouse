@@ -468,9 +468,6 @@ export default function ViewExportPage() {
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
           Yêu cầu xuất kho
         </h2>
-        <p className="text-muted-foreground text-sm">
-          Xem danh sách các yêu cầu xuất kho từ đại lý
-        </p>
       </div>
 
       <Tabs

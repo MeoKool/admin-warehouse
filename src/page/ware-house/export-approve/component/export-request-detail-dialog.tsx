@@ -194,12 +194,14 @@ export function ExportRequestDetailDialog({
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Đóng
                 </Button>
-                {requestDetail.status === "APPROVED" &&
-                  requestDetail.remainingQuantity > 0 && (
-                    <Button onClick={() => setShowCoordinationForm(true)}>
-                      Tạo yêu cầu điều phối
-                    </Button>
-                  )}
+                {(requestDetail?.status === "APPROVED" &&
+                  requestDetail.remainingQuantity > 0) ||
+                requestDetail?.status === "PENDING" ||
+                requestDetail?.status === "Chờ duyệt" ? (
+                  <Button onClick={() => setShowCoordinationForm(true)}>
+                    Tạo yêu cầu điều phối
+                  </Button>
+                ) : null}
               </DialogFooter>
             ) : (
               <>

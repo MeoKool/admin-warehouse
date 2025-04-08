@@ -37,6 +37,8 @@ export interface WarehouseTransfer {
   notes: string;
   orderCode: string;
   products: Product[];
+  sourceWarehouseName: string;
+  destinationWarehouseName: string;
 }
 
 // Interface for Warehouse Information

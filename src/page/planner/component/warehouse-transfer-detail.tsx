@@ -259,7 +259,9 @@ export function WarehouseTransferDetail({
           <Button variant="destructive" onClick={onClose}>
             Đóng
           </Button>
-          {detailedTransfer.status.toLowerCase() !== "completed" && (
+          {!["completed", "approved", "planned"].includes(
+            detailedTransfer.status.toLowerCase()
+          ) && (
             <Button variant="default" onClick={onOpenPlanning}>
               <Warehouse className="h-4 w-4 mr-2" />
               Điều phối kho

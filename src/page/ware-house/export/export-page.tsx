@@ -339,10 +339,9 @@ export default function ExportPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-800">
+          <h2 className="text-2xl font-bold tracking-tight">
             Xuất sản phẩm ra kho
           </h2>
-          <p className="text-gray-600">Quản lý phiếu xuất sản phẩm</p>
         </div>
         <div className="flex gap-3">
           <Button

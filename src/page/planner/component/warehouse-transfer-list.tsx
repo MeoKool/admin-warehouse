@@ -303,6 +303,18 @@ export function WarehouseTransferList({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {!["completed", "planned", "approved"].includes(
+                          transfer.status.toLowerCase()
+                        ) && (
+                          <Button
+                            size="sm"
+                            onClick={() => onOpenPlanning(transfer)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Warehouse className="h-4 w-4 mr-1" />
+                            Điều phối
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -311,16 +323,6 @@ export function WarehouseTransferList({
                           <FileText className="h-4 w-4 mr-1" />
                           Chi tiết
                         </Button>
-                        {transfer.status.toLowerCase() !== "completed" && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => onOpenPlanning(transfer)}
-                          >
-                            <Warehouse className="h-4 w-4 mr-1" />
-                            Điều phối
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>

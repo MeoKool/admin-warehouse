@@ -40,21 +40,21 @@ export const getStatusInfo = (
       label: "Đang chờ",
       icon: "clock",
     };
-  } else if (statusLower === "processing") {
+  } else if (statusLower === "approved") {
     return {
       color: "text-blue-800",
       bgColor: "bg-blue-100",
       hoverColor: "hover:bg-blue-200",
-      label: "Đang xử lý",
+      label: "Đã xuất kho",
       icon: "truck",
     };
-  } else if (statusLower === "cancelled") {
+  } else if (statusLower === "planned") {
     return {
-      color: "text-red-800",
-      bgColor: "bg-red-100",
-      hoverColor: "hover:bg-red-200",
-      label: "Đã hủy",
-      icon: "alert-circle",
+      color: "text-pink-800",
+      bgColor: "bg-pink-100",
+      hoverColor: "hover:bg-pink-200",
+      label: "Đã chọn kho",
+      icon: "truck",
     };
   } else {
     return {

@@ -92,9 +92,6 @@ export default function WarehouseTransfersPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             Quản lý chuyển kho
           </h1>
-          <p className="text-muted-foreground">
-            Quản lý các yêu cầu chuyển kho đi và đến
-          </p>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -117,8 +114,8 @@ export default function WarehouseTransfersPage() {
           >
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="outgoing" className="flex items-center">
-                <ArrowUpRight className="mr-2 h-4 w-4" />
-                Yêu cầu chuyển đi
+                <ArrowDownLeft className="mr-2 h-4 w-4" />
+                Yêu cầu chuyển đến
                 {outgoingTransfers.length > 0 && (
                   <span className="ml-2 bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
                     {outgoingTransfers.length}
@@ -126,8 +123,8 @@ export default function WarehouseTransfersPage() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="incoming" className="flex items-center">
-                <ArrowDownLeft className="mr-2 h-4 w-4" />
-                Yêu cầu chuyển đến
+                <ArrowUpRight className="mr-2 h-4 w-4" />
+                Yêu cầu chuyển đi
                 {incomingTransfers.length > 0 && (
                   <span className="ml-2 bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
                     {incomingTransfers.length}
