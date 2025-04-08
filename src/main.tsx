@@ -31,6 +31,7 @@ import { AccountantLayout } from "./components/layout/accountant-layout";
 import { PlannerLayout } from "./components/layout/planner-layout";
 import InventoryLookupPage from "./page/planner/inventory/inventory-lookup/page";
 import WarehousePlannerPage from "./page/planner/warehouse-planner";
+import WarehouseTransfersPage from "./page/ware-house/tranfers/page";
 
 // Định nghĩa ProtectedLoginRoute trong cùng file hoặc import từ file riêng
 const ProtectedLoginRoute = () => {
@@ -102,6 +103,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="export/approval" element={<ExportApprovalPage />} />
             <Route path="view-export" element={<ViewExportPage />} />
+            <Route
+              path="transfer-request"
+              element={<WarehouseTransfersPage />}
+            />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>

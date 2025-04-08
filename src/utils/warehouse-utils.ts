@@ -66,3 +66,6 @@ export const getStatusInfo = (
     };
   }
 };
+
+// The getStatusBadge function is used in multiple components
+export const getStatusBadge = () => {};
