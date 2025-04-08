@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { ExportRequestDetailDialog } from "./component/export-request-detail-dialog";
 
 // Interface cho dữ liệu yêu cầu xuất kho
 interface ExportRequest {
@@ -82,6 +85,8 @@ export default function ExportApprovalPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
 
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId") || "3";
@@ -224,6 +229,11 @@ export default function ExportApprovalPage() {
     setIsApproveDialogOpen(true);
   };
 
+  const handleViewDetails = (warehouseRequestExportId: number) => {
+    setSelectedDetailId(warehouseRequestExportId);
+    setIsDetailDialogOpen(true);
+  };
+
   // Submit approval
   const handleSubmitApproval = async (approvalData: ApprovalData) => {
     try {
@@ -348,7 +358,13 @@ export default function ExportApprovalPage() {
                       Duyệt
                     </Button>
                   ) : (
-                    <Button variant="ghost" size="sm" disabled>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        handleViewDetails(request.warehouseRequestExportId)
+                      }
+                    >
                       <FileText className="h-4 w-4 mr-1" />
                       Chi tiết
                     </Button>
@@ -427,7 +443,7 @@ export default function ExportApprovalPage() {
                   <Select
                     value={itemsPerPage.toString()}
                     onValueChange={(value) => {
-                      setItemsPerPage(parseInt(value));
+                      setItemsPerPage(Number.parseInt(value));
                       setCurrentPage(1);
                     }}
                   >
@@ -1101,6 +1117,14 @@ export default function ExportApprovalPage() {
             };
             handleSubmitApproval(approvalData);
           }}
+        />
+      )}
+      {/* Dialog for viewing export request details */}
+      {selectedDetailId && (
+        <ExportRequestDetailDialog
+          warehouseRequestExportId={selectedDetailId}
+          open={isDetailDialogOpen}
+          onOpenChange={setIsDetailDialogOpen}
         />
       )}
     </div>

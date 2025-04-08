@@ -97,7 +97,6 @@ export function ExportDetail({
     if (statusLower === "completed" || statusLower === "approved") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-          <CheckCircle className="h-3.5 w-3.5 mr-1" />
           Hoàn thành
         </Badge>
       );

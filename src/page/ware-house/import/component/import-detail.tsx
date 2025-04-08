@@ -283,7 +283,11 @@ export function ImportDetail({ importData }: ImportDetailProps) {
                       : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {!isPending ? "Hoàn thành" : "Đang kiểm tra"}
+                  {!isPending ? (
+                    <span className="flex items-center">Hoàn thành</span>
+                  ) : (
+                    "Đang kiểm tra"
+                  )}
                 </span>
               </div>
             </div>

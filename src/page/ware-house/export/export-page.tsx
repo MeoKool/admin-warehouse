@@ -46,7 +46,6 @@ import {
   Calendar,
   Building,
   RefreshCw,
-  CheckCircle,
   AlertCircle,
 } from "lucide-react";
 import axios from "axios";
@@ -158,7 +157,6 @@ export default function ExportPage() {
     if (statusLower === "completed" || statusLower === "approved") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200 transition-colors">
-          <CheckCircle className="h-3.5 w-3.5 mr-1" />
           Hoàn thành
         </Badge>
       );
