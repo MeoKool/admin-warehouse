@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import type React from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, MoreHorizontal, CheckCircle, XCircle } from "lucide-react";
 import {
@@ -13,13 +15,70 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { Account } from "../services/account-services";
+
+// Custom dropdown menu components
+interface CustomDropdownProps {
+  children: React.ReactNode;
+  trigger: React.ReactNode;
+}
+
+function CustomDropdown({ children, trigger }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div onClick={() => setIsOpen(!isOpen)}>{trigger}</div>
+      {isOpen && (
+        <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CustomDropdownItemProps {
+  onClick?: () => void;
+  className?: string;
+  children: React.ReactNode;
+}
+
+function CustomDropdownItem({
+  onClick,
+  className,
+  children,
+}: CustomDropdownItemProps) {
+  return (
+    <div
+      className={`px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer ${
+        className || ""
+      }`}
+      onClick={() => {
+        if (onClick) onClick();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 interface AccountsTableProps {
   accounts: Account[];
@@ -87,49 +146,48 @@ export function AccountsTable({
               <div>
                 {account.status ? (
                   <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
-                    Active
+                    Kích hoạt
                   </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                    Inactive
+                    Vô hiệu hóa
                   </span>
                 )}
               </div>
               <div className="flex justify-end">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                <CustomDropdown
+                  trigger={
                     <Button variant="ghost" size="icon" className="h-8 w-8">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="flex items-center cursor-pointer"
-                      onClick={() => onEdit(account)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Chỉnh sửa
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="flex items-center  text-red-600 cursor-pointer"
-                      onClick={() =>
-                        onToggleStatus(account.userId, account.status)
-                      }
-                    >
-                      {account.status ? (
-                        <>
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Vô hiệu hóa
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Kích hoạt
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  }
+                >
+                  <CustomDropdownItem
+                    className="flex items-center"
+                    onClick={() => onEdit(account)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Chỉnh sửa
+                  </CustomDropdownItem>
+                  <CustomDropdownItem
+                    className="flex items-center text-red-600"
+                    onClick={() =>
+                      onToggleStatus(account.userId, account.status)
+                    }
+                  >
+                    {account.status ? (
+                      <>
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Vô hiệu hóa
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Kích hoạt
+                      </>
+                    )}
+                  </CustomDropdownItem>
+                </CustomDropdown>
               </div>
             </div>
           ))}
