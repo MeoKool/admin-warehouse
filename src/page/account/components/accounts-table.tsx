@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
@@ -106,12 +104,13 @@ export function AccountsTable({
 
   return (
     <div className="rounded-md border bg-white">
-      <div className="grid grid-cols-6 border-b py-3 px-4 text-sm font-medium text-gray-500">
+      {/* Header của bảng */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 border-b py-3 px-4 text-sm font-medium text-gray-500">
         <div>Tên người dùng</div>
-        <div>Email</div>
-        <div>Số điện thoại</div>
-        <div>Loại tài khoản</div>
-        <div>Trạng thái</div>
+        <div className="hidden md:block">Email</div>
+        <div className="hidden lg:block">Số điện thoại</div>
+        <div className="hidden md:block">Loại tài khoản</div>
+        <div className="hidden lg:block">Trạng thái</div>
         <div className="text-right">Thao tác</div>
       </div>
 
@@ -127,12 +126,14 @@ export function AccountsTable({
           {accounts.map((account) => (
             <div
               key={account.userId}
-              className="grid grid-cols-6 items-center py-3 px-4 hover:bg-gray-50"
+              className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 items-center py-3 px-4 hover:bg-gray-50"
             >
               <div className="font-medium">{account.username}</div>
-              <div className="text-gray-600">{account.email}</div>
-              <div>{account.phone}</div>
-              <div>
+              <div className="text-gray-600 hidden md:block truncate">
+                {account.email}
+              </div>
+              <div className="hidden lg:block">{account.phone}</div>
+              <div className="hidden md:block">
                 {account.userType === "EMPLOYEE" ? (
                   <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700">
                     Nhân viên
@@ -143,7 +144,7 @@ export function AccountsTable({
                   </span>
                 )}
               </div>
-              <div>
+              <div className="hidden lg:block">
                 {account.status ? (
                   <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
                     Kích hoạt
@@ -188,6 +189,18 @@ export function AccountsTable({
                     )}
                   </CustomDropdownItem>
                 </CustomDropdown>
+              </div>
+              {/* Hiển thị thông tin bổ sung trên màn hình nhỏ */}
+              <div className="col-span-2 md:hidden text-sm text-gray-600 mt-2">
+                <div>Email: {account.email}</div>
+                <div>Số điện thoại: {account.phone}</div>
+                <div>
+                  Loại tài khoản:{" "}
+                  {account.userType === "EMPLOYEE" ? "Nhân viên" : "Đại lý"}
+                </div>
+                <div>
+                  Trạng thái: {account.status ? "Kích hoạt" : "Vô hiệu hóa"}
+                </div>
               </div>
             </div>
           ))}
