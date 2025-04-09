@@ -20,11 +20,21 @@ export default function SignalRListener() {
         });
     }
 
-    connection.on("ReceiveNotification", (message: string) => {
-      toast(message, {
+    connection.on("ReceiveNotification", (noti) => {
+      console.log(noti);
+
+      let navigatePath = "/";
+
+      if (noti.title === "Kho") {
+        navigatePath = "/warehouse/view-export";
+      } else if (noti.title === "Kho Tổng") {
+        navigatePath = "/planner/dashboard";
+      }
+
+      toast(noti.message, {
         action: {
           label: "Xem ngay",
-          onClick: () => navigate("/warehouse/view-export/"),
+          onClick: () => navigate(navigatePath),
         },
         className: "text-lg px-6 py-5 min-w-[380px]",
         style: {
@@ -39,6 +49,7 @@ export default function SignalRListener() {
     return () => {
       connection.off("ReceiveNotification");
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;

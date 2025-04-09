@@ -82,8 +82,7 @@ export function CreateTransferDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
-  const [destinationWarehouseId, setDestinationWarehouseId] =
-    useState<string>("");
+  const [, setDestinationWarehouseId] = useState<string>("");
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(
     new Date(Date.now() + 24 * 60 * 60 * 1000) // Tomorrow
   );
@@ -229,6 +228,7 @@ export function CreateTransferDialog({
     setExportRequestProducts(updatedProducts);
   };
 
+  const wareHouseId = sessionStorage.getItem("warehouseId");
   const handleSubmit = async () => {
     if (!deliveryDate) {
       toast.error("Vui lòng chọn ngày giao hàng dự kiến");
@@ -256,7 +256,7 @@ export function CreateTransferDialog({
     setIsSubmitting(true);
     try {
       const transferData = {
-        destinationWarehouseId: Number.parseInt(destinationWarehouseId),
+        destinationWarehouseId: wareHouseId,
         expectedDeliveryDate: deliveryDate.toISOString(),
         notes,
         requestExportId:

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import {
   Table,
@@ -147,6 +149,12 @@ export function OutgoingTransfers({
     );
   }
 
+  // Sort transfers by requestDate (newest first)
+  const sortedTransfers = [...transfers].sort(
+    (a, b) =>
+      new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime()
+  );
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border overflow-x-auto">
@@ -164,7 +172,7 @@ export function OutgoingTransfers({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transfers.map((transfer) => (
+            {sortedTransfers.map((transfer) => (
               <TableRow key={transfer.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
