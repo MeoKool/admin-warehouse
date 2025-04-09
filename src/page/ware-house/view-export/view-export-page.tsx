@@ -134,9 +134,12 @@ export default function ViewExportPage() {
   const fetchExportRequests = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}RequestExport/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${API_URL}RequestExport/all?sortBy=requestdate_desc`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (Array.isArray(response.data)) {
         setExportRequests(response.data);
@@ -313,6 +316,12 @@ export default function ViewExportPage() {
       return (
         <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
           Đã hủy
+        </Badge>
+      );
+    } else if (statusLower === "partially_exported") {
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
+          Chưa đủ hàng
         </Badge>
       );
     } else {
