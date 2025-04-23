@@ -22,7 +22,7 @@ export const fetchOutgoingTransfers = async (
 ): Promise<WarehouseTransfer[]> => {
   try {
     const response = await axios.get(
-      `${API_URL}WarehouseTransfer/by-destination/${warehouseId}`,
+      `${API_URL}warehouse-transfer/by-destination/${warehouseId}`,
       getAuthHeaders()
     );
     return response.data;
@@ -38,7 +38,7 @@ export const fetchIncomingTransfers = async (
 ): Promise<WarehouseTransfer[]> => {
   try {
     const response = await axios.get(
-      `${API_URL}WarehouseTransfer/by-source/${warehouseId}`,
+      `${API_URL}warehouse-transfer/by-source/${warehouseId}`,
       getAuthHeaders()
     );
     return response.data;
@@ -104,7 +104,7 @@ export const createTransfer = async (transferData: any): Promise<void> => {
 export const approveTransfer = async (transferId: number): Promise<void> => {
   try {
     await axios.post(
-      `${API_URL}export-receipts/from-transfer`,
+      `${API_URL}warehouse-transfer/approve/`,
       { warehouseTransferRequestId: transferId },
       getAuthHeaders()
     );
