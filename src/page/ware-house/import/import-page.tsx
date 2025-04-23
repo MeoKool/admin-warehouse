@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,6 +43,7 @@ import {
   Printer,
   Download,
   Filter,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -50,20 +51,81 @@ import { ImportForm } from "./component/import-form";
 import { ImportDetail } from "./component/import-detail";
 import { useMediaQuery } from "@/components/hooks/use-media-query";
 
-// Cập nhật interface ImportReceipt để thêm trường warehouse
+// Updated interface to match the new data structure
 interface ImportReceipt {
-  id: string;
+  warehouseReceiptId: number;
   documentNumber: string;
-  date: string;
+  documentDate: string;
+  warehouseId: number;
+  warehouseName: string;
   importType: string;
   supplier: string;
-  warehouse: string;
-  status: string;
-  totalValue: number;
-  totalItems: number;
-  warehouseId?: number;
-  isApproved?: boolean;
+  dateImport: string;
+  totalQuantity: number;
+  totalPrice: number;
+  batches: any[];
+  isApproved: boolean;
 }
+
+// Move this outside the ImportPage component
+const ImportCard = forwardRef<
+  HTMLDivElement,
+  { imp: ImportReceipt; onViewDetail: (imp: ImportReceipt) => void }
+>(({ imp, onViewDetail }, ref) => (
+  <Card className="mb-4" ref={ref}>
+    <CardHeader className="pb-2">
+      <div className="flex justify-between items-center">
+        <CardTitle className="text-base">{imp.documentNumber}</CardTitle>
+        <div
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            imp.isApproved
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800"
+          }`}
+        >
+          {imp.isApproved ? "Hoàn thành" : "Đang kiểm tra"}
+        </div>
+      </div>
+      <CardDescription className="text-sm">
+        Ngày: {new Date(imp.documentDate).toLocaleDateString()}
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="pb-2 pt-0">
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p className="text-muted-foreground">Nhà cung cấp:</p>
+          <p className="font-medium">{imp.supplier}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Kho nhập:</p>
+          <p className="font-medium">{imp.warehouseName}</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Giá trị:</p>
+          <p className="font-medium">{imp.totalPrice.toLocaleString()} đ</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Số lượng:</p>
+          <p className="font-medium">{imp.totalQuantity}</p>
+        </div>
+      </div>
+    </CardContent>
+    <CardFooter className="pt-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        onClick={() => onViewDetail(imp)}
+      >
+        <FileText className="h-4 w-4 mr-1" />
+        Chi tiết
+      </Button>
+    </CardFooter>
+  </Card>
+));
+
+// Add display name
+ImportCard.displayName = "ImportCard";
 
 export default function ImportPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -75,61 +137,51 @@ export default function ImportPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [imports, setImports] = useState<ImportReceipt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // Check if screen is mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Fetch imports
+  const fetchImports = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}warehouse-receipts/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Check if the response has the success and data structure
+      const responseData = response.data.success
+        ? response.data.data
+        : response.data;
+
+      // Use the data directly as it matches our interface
+      setImports(Array.isArray(responseData) ? responseData : []);
+    } catch (error) {
+      console.error("Error fetching imports:", error);
+      toast.error("Không thể tải danh sách phiếu nhập");
+      setImports([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const fetchImports = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          `${API_URL}WarehouseReceipt/by-warehouse/${warehouseId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data = response.data;
-
-        // Trong hàm fetchImports, đảm bảo rằng trường warehouse được thiết lập đúng
-        const formattedData = Array.isArray(data)
-          ? data.map((item) => ({
-              id: item.warehouseReceiptId?.toString() || "",
-              documentNumber: item.documentNumber,
-              date: new Date(item.documentDate || item.dateImport)
-                .toISOString()
-                .split("T")[0],
-              importType: item.importType,
-              supplier: item.supplier,
-              warehouse: "Kho " + (item.warehouseId || ""),
-              warehouseId: item.warehouseId,
-              isApproved: item.isApproved,
-              status: item.isApproved ? "completed" : "pending",
-              totalValue: item.totalPrice || 0,
-              totalItems: item.batches?.length || 0,
-            }))
-          : [];
-
-        setImports(formattedData);
-      } catch (error) {
-        console.error("Error fetching imports:", error);
-        toast.error("Không thể tải danh sách phiếu nhập");
-        // Fallback to empty array
-        setImports([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchImports();
-  }, [isImportDialogOpen, API_URL, token, warehouseId]); // Refetch when dialog closes
+  }, [isImportDialogOpen]); // Refetch when dialog closes
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchImports();
+  };
 
   // Filter imports based on search term and status
   const filteredImports = imports.filter((imp) => {
@@ -157,54 +209,6 @@ export default function ImportPage() {
     setIsImportDialogOpen(false);
   };
 
-  // Mobile card view for each import item
-  const ImportCard = ({ imp }: { imp: ImportReceipt }) => (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-base">{imp.documentNumber}</CardTitle>
-          <div
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              imp.status === "completed"
-                ? "bg-green-100 text-green-800"
-                : "bg-yellow-100 text-yellow-800"
-            }`}
-          >
-            {imp.status === "completed" ? "Hoàn thành" : "Đang kiểm tra"}
-          </div>
-        </div>
-        <CardDescription className="text-sm">Ngày: {imp.date}</CardDescription>
-      </CardHeader>
-      <CardContent className="pb-2 pt-0">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <p className="text-muted-foreground">Nhà cung cấp:</p>
-            <p className="font-medium">{imp.supplier}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Kho nhập:</p>
-            <p className="font-medium">{imp.warehouse}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Giá trị:</p>
-            <p className="font-medium">{imp.totalValue.toLocaleString()} đ</p>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="pt-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full"
-          onClick={() => handleViewDetail(imp)}
-        >
-          <FileText className="h-4 w-4 mr-1" />
-          Chi tiết
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-
   return (
     <div className="space-y-6 px-2 sm:px-4">
       <div className="flex justify-between items-center">
@@ -214,23 +218,41 @@ export default function ImportPage() {
           </h2>
         </div>
 
-        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Tạo phiếu nhập
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[1000px]">
-            <DialogHeader>
-              <DialogTitle>Tạo phiếu nhập sản phẩm</DialogTitle>
-              <DialogDescription>
-                Điền thông tin để tạo phiếu nhập sản phẩm mới
-              </DialogDescription>
-            </DialogHeader>
-            <ImportForm onClose={handleCloseImportDialog} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <div className="animate-spin h-4 w-4 mr-2 border-b-2 border-current"></div>
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Làm mới
+          </Button>
+
+          <Dialog
+            open={isImportDialogOpen}
+            onOpenChange={setIsImportDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Tạo phiếu nhập
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[1000px]">
+              <DialogHeader>
+                <DialogTitle>Tạo phiếu nhập sản phẩm</DialogTitle>
+                <DialogDescription>
+                  Điền thông tin để tạo phiếu nhập sản phẩm mới
+                </DialogDescription>
+              </DialogHeader>
+              <ImportForm onClose={handleCloseImportDialog} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Tabs
@@ -292,7 +314,11 @@ export default function ImportPage() {
                     </div>
                   ) : (
                     filteredImports.map((imp) => (
-                      <ImportCard key={imp.id} imp={imp} />
+                      <ImportCard
+                        key={imp.warehouseReceiptId}
+                        imp={imp}
+                        onViewDetail={handleViewDetail}
+                      />
                     ))
                   )}
                 </div>
@@ -329,28 +355,30 @@ export default function ImportPage() {
                         </TableRow>
                       ) : (
                         filteredImports.map((imp) => (
-                          <TableRow key={imp.id}>
+                          <TableRow key={imp.warehouseReceiptId}>
                             <TableCell className="font-medium">
                               {imp.documentNumber}
                             </TableCell>
-                            <TableCell>{imp.date}</TableCell>
+                            <TableCell>
+                              {new Date(imp.documentDate).toLocaleDateString()}
+                            </TableCell>
                             <TableCell>{imp.supplier}</TableCell>
-                            <TableCell>{imp.warehouse}</TableCell>
+                            <TableCell>{imp.warehouseName}</TableCell>
                             <TableCell>
                               <div
                                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                  imp.status === "completed"
+                                  imp.isApproved
                                     ? "bg-green-100 text-green-800"
                                     : "bg-yellow-100 text-yellow-800"
                                 }`}
                               >
-                                {imp.status === "completed"
+                                {imp.isApproved
                                   ? "Hoàn thành"
                                   : "Đang kiểm tra"}
                               </div>
                             </TableCell>
                             <TableCell>
-                              {imp.totalValue.toLocaleString()} đ
+                              {imp.totalPrice.toLocaleString()} đ
                             </TableCell>
                             <TableCell className="text-right">
                               <Button
@@ -413,7 +441,11 @@ export default function ImportPage() {
                     </div>
                   ) : (
                     filteredImports.map((imp) => (
-                      <ImportCard key={imp.id} imp={imp} />
+                      <ImportCard
+                        key={imp.warehouseReceiptId}
+                        imp={imp}
+                        onViewDetail={handleViewDetail}
+                      />
                     ))
                   )}
                 </div>
@@ -450,28 +482,30 @@ export default function ImportPage() {
                         </TableRow>
                       ) : (
                         filteredImports.map((imp) => (
-                          <TableRow key={imp.id}>
+                          <TableRow key={imp.warehouseReceiptId}>
                             <TableCell className="font-medium">
                               {imp.documentNumber}
                             </TableCell>
-                            <TableCell>{imp.date}</TableCell>
+                            <TableCell>
+                              {new Date(imp.documentDate).toLocaleDateString()}
+                            </TableCell>
                             <TableCell>{imp.supplier}</TableCell>
-                            <TableCell>{imp.warehouse}</TableCell>
+                            <TableCell>{imp.warehouseName}</TableCell>
                             <TableCell>
                               <div
                                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                  imp.status === "completed"
+                                  imp.isApproved
                                     ? "bg-green-100 text-green-800"
                                     : "bg-yellow-100 text-yellow-800"
                                 }`}
                               >
-                                {imp.status === "completed"
+                                {imp.isApproved
                                   ? "Hoàn thành"
                                   : "Đang kiểm tra"}
                               </div>
                             </TableCell>
                             <TableCell>
-                              {imp.totalValue.toLocaleString()} đ
+                              {imp.totalPrice.toLocaleString()} đ
                             </TableCell>
                             <TableCell className="text-right">
                               <Button
@@ -520,7 +554,11 @@ export default function ImportPage() {
                     </div>
                   ) : (
                     filteredImports.map((imp) => (
-                      <ImportCard key={imp.id} imp={imp} />
+                      <ImportCard
+                        key={imp.warehouseReceiptId}
+                        imp={imp}
+                        onViewDetail={handleViewDetail}
+                      />
                     ))
                   )}
                 </div>
@@ -557,28 +595,30 @@ export default function ImportPage() {
                         </TableRow>
                       ) : (
                         filteredImports.map((imp) => (
-                          <TableRow key={imp.id}>
+                          <TableRow key={imp.warehouseReceiptId}>
                             <TableCell className="font-medium">
                               {imp.documentNumber}
                             </TableCell>
-                            <TableCell>{imp.date}</TableCell>
+                            <TableCell>
+                              {new Date(imp.documentDate).toLocaleDateString()}
+                            </TableCell>
                             <TableCell>{imp.supplier}</TableCell>
-                            <TableCell>{imp.warehouse}</TableCell>
+                            <TableCell>{imp.warehouseName}</TableCell>
                             <TableCell>
                               <div
                                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                  imp.status === "completed"
+                                  imp.isApproved
                                     ? "bg-green-100 text-green-800"
                                     : "bg-yellow-100 text-yellow-800"
                                 }`}
                               >
-                                {imp.status === "completed"
+                                {imp.isApproved
                                   ? "Hoàn thành"
                                   : "Đang kiểm tra"}
                               </div>
                             </TableCell>
                             <TableCell>
-                              {imp.totalValue.toLocaleString()} đ
+                              {imp.totalPrice.toLocaleString()} đ
                             </TableCell>
                             <TableCell className="text-right">
                               <Button

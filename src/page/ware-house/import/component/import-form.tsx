@@ -1,5 +1,7 @@
-import type React from "react";
+"use client";
 
+import type React from "react";
+import { forwardRef } from "react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +69,52 @@ const ALLOWED_UNITS = ["Chai", "Bao"];
 // Các loại nhập kho
 const IMPORT_TYPES = ["Nhập Sản Xuất"];
 
+// Create a forwardRef wrapper for the product selection button
+const ProductSelectButton = forwardRef<
+  HTMLButtonElement,
+  {
+    isLoading: boolean;
+    productName: string;
+    productCode: string;
+    onClick: () => void;
+    className?: string;
+    disabled?: boolean;
+  }
+>((props, ref) => {
+  const { isLoading, productName, productCode, onClick, className, disabled } =
+    props;
+
+  return (
+    <Button
+      ref={ref}
+      variant="outline"
+      className={`w-full justify-start text-left font-normal ${
+        className || ""
+      }`}
+      disabled={disabled || isLoading}
+      onClick={onClick}
+      type="button"
+    >
+      {isLoading ? (
+        <div className="flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+          <span>Đang tải...</span>
+        </div>
+      ) : productName ? (
+        <div className="flex flex-col">
+          <span>{productName}</span>
+          <span className="text-xs text-muted-foreground">{productCode}</span>
+        </div>
+      ) : (
+        <span className="text-muted-foreground">Chọn sản phẩm</span>
+      )}
+    </Button>
+  );
+});
+
+// Add display name to avoid React warnings
+ProductSelectButton.displayName = "ProductSelectButton";
+
 export function ImportForm({ onClose }: ImportFormProps) {
   const [formData, setFormData] = useState({
     documentNumber: `IMP-${format(new Date(), "yyyyMMdd")}-001`,
@@ -104,14 +152,17 @@ export function ImportForm({ onClose }: ImportFormProps) {
     const fetchProducts = async () => {
       setIsLoadingProducts(true);
       try {
-        const response = await axios.get(`${API_URL}product`, {
+        const response = await axios.get(`${API_URL}/api/product`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
         if (response.status === 200) {
-          setProducts(Array.isArray(response.data) ? response.data : []);
+          const responseData = response.data.success
+            ? response.data.data
+            : response.data;
+          setProducts(Array.isArray(responseData) ? responseData : []);
         } else {
           throw new Error("Failed to fetch products");
         }
@@ -242,7 +293,6 @@ export function ImportForm({ onClose }: ImportFormProps) {
     );
     if (invalidItems) {
       console.log("Invalid items:", items);
-
       return;
     }
 
@@ -266,7 +316,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
 
       // Call API to create import
       const response = await axios.post(
-        `${API_URL}WarehouseReceipt/create`,
+        `${API_URL}/api/WarehouseReceipt/create`,
         importData,
         {
           headers: {
@@ -407,30 +457,12 @@ export function ImportForm({ onClose }: ImportFormProps) {
                 items.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                        disabled={isLoadingProducts}
+                      <ProductSelectButton
+                        isLoading={isLoadingProducts}
+                        productName={item.productName}
+                        productCode={item.productCode}
                         onClick={() => openProductSelector(index)}
-                      >
-                        {isLoadingProducts ? (
-                          <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
-                            <span>Đang tải...</span>
-                          </div>
-                        ) : item.productName ? (
-                          <div className="flex flex-col">
-                            <span>{item.productName}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {item.productCode}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            Chọn sản phẩm
-                          </span>
-                        )}
-                      </Button>
+                      />
                     </TableCell>
                     <TableCell>
                       <Select
