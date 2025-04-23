@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,24 +66,21 @@ import {
 
 // Interfaces remain the same
 interface ExportReceipt {
-  exportWarehouseReceiptId: number;
   documentNumber: string;
   documentDate: string;
   exportDate: string;
   exportType: string;
   totalQuantity: number;
   totalAmount: number;
-  requestExportId: number;
-  agencyName: string;
-  orderCode: number;
   status: string;
   warehouseId: number;
-  exportWarehouseReceiptDetails: ExportReceiptDetail[];
+  requestExportId: number;
+  orderCode: string;
+  agencyName: string;
+  details: ExportReceiptDetail[];
 }
 
 interface ExportReceiptDetail {
-  exportWarehouseReceiptDetailId: number;
-  exportWarehouseReceiptId: number;
   warehouseProductId: number;
   productId: number;
   productName: string;
@@ -108,7 +107,6 @@ export default function ExportPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId") || "8";
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // Fetch export data
@@ -119,17 +117,18 @@ export default function ExportPage() {
   const fetchExports = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${API_URL}export-receipts/get-all/${warehouseId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_URL}WarehouseExport/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      if (Array.isArray(response.data)) {
-        setExports(response.data);
+      if (
+        response.data &&
+        response.data.success &&
+        Array.isArray(response.data.data)
+      ) {
+        setExports(response.data.data);
       } else {
         toast.warning("Không thể lấy dữ liệu từ API, đang sử dụng dữ liệu mẫu");
       }
@@ -279,7 +278,7 @@ export default function ExportPage() {
           ) : (
             data.map((exp) => (
               <TableRow
-                key={exp.exportWarehouseReceiptId}
+                key={exp.documentNumber}
                 className="hover:bg-gray-50 transition-colors"
               >
                 <TableCell className="font-medium">
@@ -446,7 +445,7 @@ export default function ExportPage() {
                   <Select
                     value={itemsPerPage.toString()}
                     onValueChange={(value) => {
-                      setItemsPerPage(parseInt(value));
+                      setItemsPerPage(Number.parseInt(value));
                       setCurrentPage(1);
                     }}
                   >

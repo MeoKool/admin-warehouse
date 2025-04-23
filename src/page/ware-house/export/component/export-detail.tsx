@@ -16,6 +16,7 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,30 +33,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import axios from "axios";
 
-// Cập nhật interface ExportDetailProps để khớp chính xác với API
-interface ExportDetailProps {
-  exportData: {
-    exportWarehouseReceiptId: number;
-    documentNumber: string;
-    documentDate: string;
-    exportDate: string;
-    exportType: string;
-    totalQuantity: number;
-    totalAmount: number;
-    requestExportId: number;
-    agencyName: string;
-    orderCode: number;
-    status: string;
-    warehouseId: number;
-    exportWarehouseReceiptDetails: ExportReceiptDetail[];
-  };
-  onApproved?: () => void;
-}
-
 // Interface cho chi tiết phiếu xuất
 interface ExportReceiptDetail {
-  exportWarehouseReceiptDetailId: number;
-  exportWarehouseReceiptId: number;
   warehouseProductId: number;
   productId: number;
   productName: string;
@@ -64,6 +43,25 @@ interface ExportReceiptDetail {
   unitPrice: number;
   totalProductAmount: number;
   expiryDate: string;
+}
+
+// Interface cho props của component
+interface ExportDetailProps {
+  exportData: {
+    documentNumber: string;
+    documentDate: string;
+    exportDate: string;
+    exportType: string;
+    totalQuantity: number;
+    totalAmount: number;
+    status: string;
+    warehouseId: number;
+    requestExportId: number;
+    orderCode: string;
+    agencyName: string;
+    details: ExportReceiptDetail[];
+  };
+  onApproved?: () => void;
 }
 
 export function ExportDetail({
@@ -129,15 +127,15 @@ export function ExportDetail({
     setIsApprovalDialogOpen(true);
   };
 
-  // Xử lý duyệt đơn - Cập nhật để sử dụng exportWarehouseReceiptId
+  // Xử lý duyệt đơn - Cập nhật để sử dụng documentNumber
   const handleApprove = async () => {
     if (!selectedDetail) return;
     setIsLoading(false);
     setIsApproving(true);
     try {
-      // Gọi API duyệt đơn với exportWarehouseReceiptId
+      // Gọi API duyệt đơn với documentNumber
       const response = await axios.put(
-        `${API_URL}export-receipts/${exportData.exportWarehouseReceiptId}/approve`,
+        `${API_URL}WarehouseExport/finalize-export-sale/${exportData.documentNumber}`,
         {},
         {
           headers: {
@@ -194,11 +192,7 @@ export function ExportDetail({
                 <Button
                   variant="default"
                   className="bg-green-600 hover:bg-green-700"
-                  onClick={() =>
-                    openApprovalDialog(
-                      exportData.exportWarehouseReceiptDetails[0]
-                    )
-                  }
+                  onClick={() => openApprovalDialog(exportData.details[0])}
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Duyệt đơn xuất kho
@@ -276,7 +270,7 @@ export function ExportDetail({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {exportData.exportWarehouseReceiptDetails.map((item, index) => (
+                {exportData.details.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">
                       {item.productId}
@@ -289,6 +283,7 @@ export function ExportDetail({
                     <TableCell>{item.batchNumber}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                         {formatDate(item.expiryDate)}
                       </div>
                     </TableCell>
@@ -308,16 +303,10 @@ export function ExportDetail({
                   </TableRow>
                 ))}
                 <TableRow>
-                  <TableCell
-                    colSpan={canApprove ? 7 : 6}
-                    className="text-right font-medium"
-                  >
+                  <TableCell colSpan={6} className="text-right font-medium">
                     Tổng giá trị:
                   </TableCell>
-                  <TableCell
-                    className="text-right font-bold"
-                    colSpan={canApprove ? 1 : 1}
-                  >
+                  <TableCell className="text-right font-bold">
                     {exportData.totalAmount.toLocaleString()} VNĐ
                   </TableCell>
                 </TableRow>
@@ -342,7 +331,7 @@ export function ExportDetail({
         </p>
       </div>
 
-      {/* Dialog duyệt đơn xuất kho - Đơn giản hóa vì chỉ cần ID */}
+      {/* Dialog duyệt đơn xuất kho */}
       <Dialog
         open={isApprovalDialogOpen}
         onOpenChange={setIsApprovalDialogOpen}
@@ -360,7 +349,7 @@ export function ExportDetail({
                 Mã phiếu xuất
               </Label>
               <div className="col-span-3 font-medium">
-                {exportData.exportWarehouseReceiptId}
+                {exportData.documentNumber}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

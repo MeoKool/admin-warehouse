@@ -1,3 +1,5 @@
+"use client";
+
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,14 +30,14 @@ interface ExportFormProps {
   onClose: () => void;
 }
 
-// Cập nhật interface cho dữ liệu form: đổi requestExportId -> warehouseRequestExportId
+// Interface cho dữ liệu form
 interface ExportFormData {
   documentNumber: string;
   documentDate: string;
   exportDate: string;
   exportType: string;
   warehouseId: number | string;
-  warehouseRequestExportId: number | null;
+  requestExportId: number | null;
   note: string;
 }
 
@@ -68,7 +70,6 @@ interface InventoryItem {
 
 // Interface cho request export items
 interface RequestExportItem {
-  warehouseRequestExportId: number;
   requestExportId: number;
   productId: number;
   quantityRequested: number;
@@ -80,22 +81,22 @@ interface RequestExportItem {
 }
 
 const EXPORT_TYPES = [
-  "Xuất hàng",
-  "Xuất trả",
-  "Xuất hủy",
-  "Xuất kiểm kê",
-  "Xuất khác",
+  "ExportCoordination",
+  "ExportSale",
+  "ExportReturn",
+  "ExportInventory",
+  "ExportOther",
 ];
 
 export function ExportForm({ onClose }: ExportFormProps) {
-  // State cho form data sử dụng warehouseRequestExportId
+  // State cho form data
   const [formData, setFormData] = useState<ExportFormData>({
     documentNumber: `XK-${new Date().getTime().toString().slice(-6)}`,
     documentDate: new Date().toISOString().split("T")[0],
     exportDate: new Date().toISOString().split("T")[0],
-    exportType: "Xuất hàng",
+    exportType: "ExportCoordination",
     warehouseId: "",
-    warehouseRequestExportId: null,
+    requestExportId: null,
     note: "",
   });
 
@@ -213,9 +214,8 @@ export function ExportForm({ onClose }: ExportFormProps) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Chỉnh sửa hàm handleSelectChange để xử lý warehouseRequestExportId
   const handleSelectChange = (name: string, value: string) => {
-    if (name === "warehouseRequestExportId") {
+    if (name === "requestExportId") {
       if (value === "none") {
         setFormData((prev) => ({ ...prev, [name]: null }));
       } else {
@@ -302,7 +302,6 @@ export function ExportForm({ onClose }: ExportFormProps) {
     return items.reduce((sum, item) => sum + item.totalProductAmount, 0);
   };
 
-  // Cập nhật handleSubmit để gửi warehouseRequestExportId thay vì requestExportId
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -323,8 +322,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
       exportDate: new Date(formData.exportDate).toISOString(),
       exportType: formData.exportType,
       warehouseId: Number(warehouseId),
-      // Gửi warehouseRequestExportId đã chọn (nếu chưa chọn sẽ chuyển thành 0)
-      warehouseRequestExportId: formData.warehouseRequestExportId || 0,
+      requestExportId: formData.requestExportId || 0,
       details: items.map((item) => ({
         warehouseProductId: item.warehouseProductId,
         productId: item.productId,
@@ -345,7 +343,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
     setIsSubmitting(true);
     try {
       const response = await axios.post(
-        `${API_URL}export-receipts`,
+        `${API_URL}WarehouseExport/create`,
         exportData,
         {
           headers: {
@@ -450,13 +448,13 @@ export function ExportForm({ onClose }: ExportFormProps) {
           </div>
         </div>
 
-        {/* Chọn warehouseRequestExportId */}
+        {/* Chọn requestExportId */}
         <div className="space-y-2">
-          <Label htmlFor="warehouseRequestExportId">Yêu cầu xuất kho</Label>
+          <Label htmlFor="requestExportId">Yêu cầu xuất kho</Label>
           <Select
-            value={formData.warehouseRequestExportId?.toString() || ""}
+            value={formData.requestExportId?.toString() || ""}
             onValueChange={(value) =>
-              handleSelectChange("warehouseRequestExportId", value)
+              handleSelectChange("requestExportId", value)
             }
           >
             <SelectTrigger>
@@ -475,10 +473,10 @@ export function ExportForm({ onClose }: ExportFormProps) {
               ) : (
                 requestExports.map((req) => (
                   <SelectItem
-                    key={req.warehouseRequestExportId}
-                    value={req.warehouseRequestExportId.toString()}
+                    key={req.requestExportId}
+                    value={req.requestExportId.toString()}
                   >
-                    Yêu cầu #{req.warehouseRequestExportId} - {req.productName}
+                    Yêu cầu #{req.requestExportId} - {req.productName}
                   </SelectItem>
                 ))
               )}
