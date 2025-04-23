@@ -51,6 +51,7 @@ interface ExportItem {
   unitPrice: number;
   totalProductAmount: number;
   expiryDate: string;
+  exportWarehouseReceiptId?: number; // Add this field to match
 }
 
 // Interface cho inventory items từ API
@@ -332,6 +333,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
         unitPrice: item.unitPrice,
         totalProductAmount: item.totalProductAmount,
         expiryDate: new Date(item.expiryDate).toISOString(),
+        // Don't include exportWarehouseReceiptId when creating a new export
       })),
     };
 
@@ -343,7 +345,7 @@ export function ExportForm({ onClose }: ExportFormProps) {
     setIsSubmitting(true);
     try {
       const response = await axios.post(
-        `${API_URL}WarehouseExport/create`,
+        `${API_URL}/WarehouseExport/create`,
         exportData,
         {
           headers: {

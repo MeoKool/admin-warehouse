@@ -43,6 +43,7 @@ interface ExportReceiptDetail {
   unitPrice: number;
   totalProductAmount: number;
   expiryDate: string;
+  exportWarehouseReceiptId?: number; // Make it optional to be more flexible
 }
 
 // Interface cho props của component
@@ -60,6 +61,7 @@ interface ExportDetailProps {
     orderCode: string;
     agencyName: string;
     details: ExportReceiptDetail[];
+    exportWarehouseReceiptId: number;
   };
   onApproved?: () => void;
 }
@@ -133,9 +135,9 @@ export function ExportDetail({
     setIsLoading(false);
     setIsApproving(true);
     try {
-      // Gọi API duyệt đơn với documentNumber
-      const response = await axios.put(
-        `${API_URL}WarehouseExport/finalize-export-sale/${exportData.documentNumber}`,
+      // Gọi API duyệt đơn với exportWarehouseReceiptId
+      const response = await axios.post(
+        `${API_URL}WarehouseExport/finalize-export-sale/${exportData.exportWarehouseReceiptId}`,
         {},
         {
           headers: {
@@ -166,9 +168,14 @@ export function ExportDetail({
       } else {
         throw new Error("Duyệt đơn xuất kho thất bại");
       }
-    } catch (error) {
-      console.error("Error approving export:", error);
-      toast.error("Không thể duyệt đơn xuất kho. Vui lòng thử lại sau.");
+    } catch (error: any) {
+      console.error(
+        "Error approving export:",
+        error?.response?.data?.message || "Unknown error"
+      );
+      toast.error(
+        error?.response?.data?.message || "Đã xảy ra lỗi khi duyệt đơn xuất kho"
+      );
     } finally {
       setIsApproving(false);
     }

@@ -78,6 +78,7 @@ interface ExportReceipt {
   orderCode: string;
   agencyName: string;
   details: ExportReceiptDetail[];
+  exportWarehouseReceiptId: number;
 }
 
 interface ExportReceiptDetail {
@@ -89,6 +90,7 @@ interface ExportReceiptDetail {
   unitPrice: number;
   totalProductAmount: number;
   expiryDate: string;
+  exportWarehouseReceiptId?: number; // Make it optional in the main page
 }
 
 export default function ExportPage() {
