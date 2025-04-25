@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,10 +37,9 @@ import {
   Calendar,
   Filter,
   ClipboardList,
-  FileOutput,
   Building,
-  User,
   RefreshCcw,
+  FileOutput,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -63,62 +64,52 @@ import {
 import { connection } from "@/lib/signalr-client";
 
 // ------------------
-// Các interface
+// Interfaces
 // ------------------
 interface ProductDetail {
+  warehouseProductId: number;
   productId: number;
-  productCode: string;
   productName: string;
-  unit: string;
-  defaultExpiration: number;
-  categoryId: number;
-  description: string;
-  taxId: number;
-  createdBy: string;
-  createdDate: string;
-  availableStock: number;
-  price: number;
-  images: string[];
+  batchNumber: string;
+  quantity: number;
+  unitPrice: number;
+  totalProductAmount: number;
+  expiryDate: string;
 }
 
-interface RequestExportDetail {
-  requestExportDetailId: number;
-  productId: number;
-  requestedQuantity: number;
-  productDetail?: ProductDetail;
-}
-
-interface RequestExport {
-  requestExportCode: string;
-  requestExportId: number;
-  orderId: string;
-  requestedBy: number;
-  approvedBy: number;
+interface ExportWarehouseReceipt {
+  exportWarehouseReceiptId: number;
+  documentNumber: string;
+  documentDate: string;
+  exportDate: string;
+  exportType: "PendingTransfer" | "AvailableExport" | "ExportSale";
+  totalQuantity: number;
+  totalAmount: number;
   status: string;
-  approvedDate: string;
-  note: string;
-  requestExportDetails: RequestExportDetail[];
+  warehouseId: number;
+  requestExportId: number;
+  orderCode: string;
   agencyName: string;
-  approvedByName: string;
+  details: ProductDetail[];
 }
 
 export default function ViewExportPage() {
-  const [exportRequests, setExportRequests] = useState<RequestExport[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<RequestExport[]>([]);
+  const [exportReceipts, setExportReceipts] = useState<
+    ExportWarehouseReceipt[]
+  >([]);
+  const [filteredReceipts, setFilteredReceipts] = useState<
+    ExportWarehouseReceipt[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedRequest, setSelectedRequest] = useState<RequestExport | null>(
-    null
-  );
+  const [selectedReceipt, setSelectedReceipt] =
+    useState<ExportWarehouseReceipt | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [productCache, setProductCache] = useState<Map<number, ProductDetail>>(
-    new Map()
-  );
-  const [isCreatingExport, setIsCreatingExport] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isCreatingExport, setIsCreatingExport] = useState(false);
 
   // Check if screen is mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -128,152 +119,100 @@ export default function ViewExportPage() {
   const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   // ------------------
-  // Fetch export requests
+  // Fetch export receipts
   // ------------------
-  const fetchExportRequests = async () => {
+  const fetchExportReceipts = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(
-        `${API_URL}RequestExport/all?sortBy=requestdate_desc`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get(`${API_URL}WarehouseExport/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (Array.isArray(response.data)) {
-        setExportRequests(response.data);
-
-        // Tập hợp tất cả productId từ các yêu cầu
-        const productIds = new Set<number>();
-        response.data.forEach((request: RequestExport) => {
-          request.requestExportDetails.forEach(
-            (detail: RequestExportDetail) => {
-              productIds.add(detail.productId);
-            }
-          );
-        });
-
-        // Fetch thông tin sản phẩm cho các productId đó
-        await fetchProductDetails(Array.from(productIds));
+        setExportReceipts(response.data);
+        setFilteredReceipts(response.data);
+      } else if (
+        response.data &&
+        response.data.success &&
+        Array.isArray(response.data.data)
+      ) {
+        // Handle the new response format
+        setExportReceipts(response.data.data);
+        setFilteredReceipts(response.data.data);
       } else {
         toast.error("Dữ liệu không hợp lệ");
-        setExportRequests([]);
-        setFilteredRequests([]);
+        setExportReceipts([]);
+        setFilteredReceipts([]);
       }
     } catch (error) {
-      console.error("Error fetching export requests:", error);
-      setExportRequests([]);
-      setFilteredRequests([]);
+      console.error("Error fetching export receipts:", error);
+      setExportReceipts([]);
+      setFilteredReceipts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ------------------
-  // Fetch product details
-  // ------------------
-  const fetchProductDetails = async (productIds: number[]) => {
-    const newProductCache = new Map(productCache);
-    const idsToFetch = productIds.filter((id) => !newProductCache.has(id));
-
-    if (idsToFetch.length === 0) return;
-
-    try {
-      const promises = idsToFetch.map(async (productId) => {
-        try {
-          const response = await axios.get(`${API_URL}product/${productId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          return { id: productId, data: response.data };
-        } catch (error) {
-          console.error(`Error fetching product ${productId}:`, error);
-          return { id: productId, data: null };
-        }
-      });
-
-      const results = await Promise.all(promises);
-      results.forEach((result) => {
-        if (result.data) {
-          newProductCache.set(result.id, result.data);
-        }
-      });
-      setProductCache(newProductCache);
-
-      // Cập nhật thông tin sản phẩm vào yêu cầu xuất
-      setExportRequests((prevRequests) =>
-        prevRequests.map((request) => ({
-          ...request,
-          requestExportDetails: request.requestExportDetails.map((detail) => ({
-            ...detail,
-            productDetail: newProductCache.get(detail.productId),
-          })),
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching product details:", error);
-    }
-  };
-
   // Gọi fetch một lần khi component mount
   useEffect(() => {
-    fetchExportRequests();
+    fetchExportReceipts();
   }, []);
 
   // ------------------
   // Auto refresh khi nhận được sự kiện từ SIGNALR
   // ------------------
   useEffect(() => {
-    const handleNewExportRequest = () => {
-      fetchExportRequests();
+    const handleNewExportReceipt = () => {
+      fetchExportReceipts();
     };
 
-    connection.on("ReceiveNotification", handleNewExportRequest);
+    connection.on("ReceiveNotification", handleNewExportReceipt);
     return () => {
-      connection.off("ReceiveNotification", handleNewExportRequest);
+      connection.off("ReceiveNotification", handleNewExportReceipt);
     };
   }, []);
 
   // ------------------
-  // Filter and paginate export requests
+  // Filter and paginate export receipts
   // ------------------
   useEffect(() => {
-    const filtered = exportRequests.filter((req) => {
+    const filtered = exportReceipts.filter((receipt) => {
       const matchesSearch =
-        req.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        req.requestExportId.toString().includes(searchTerm) ||
-        req.requestExportDetails.some(
+        receipt.documentNumber
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        receipt.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        receipt.exportWarehouseReceiptId.toString().includes(searchTerm) ||
+        receipt.details.some(
           (detail) =>
-            detail.productDetail?.productName
+            detail.productName
               .toLowerCase()
               .includes(searchTerm.toLowerCase()) ||
-            detail.productDetail?.productCode
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase())
+            detail.batchNumber.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
       const matchesStatus =
         statusFilter === "all" ||
-        req.status.toLowerCase() === statusFilter.toLowerCase();
+        receipt.status.toLowerCase() === statusFilter.toLowerCase();
 
       const matchesTab =
         activeTab === "all" ||
-        req.status.toLowerCase() === activeTab.toLowerCase();
+        receipt.status.toLowerCase() === activeTab.toLowerCase();
 
       return matchesSearch && matchesStatus && matchesTab;
     });
 
-    // Tính toán phân trang
+    // Calculate pagination
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const paginatedRequests = filtered.slice(indexOfFirstItem, indexOfLastItem);
+    const paginatedReceipts = filtered.slice(indexOfFirstItem, indexOfLastItem);
 
-    setFilteredRequests(paginatedRequests);
+    setFilteredReceipts(paginatedReceipts);
   }, [
     searchTerm,
     statusFilter,
     activeTab,
-    exportRequests,
-    productCache,
+    exportReceipts,
     currentPage,
     itemsPerPage,
   ]);
@@ -293,13 +232,13 @@ export default function ViewExportPage() {
 
   const getStatusBadge = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower === "approved") {
+    if (statusLower === "completed") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
           Hoàn thành
         </Badge>
       );
-    } else if (statusLower === "processing") {
+    } else if (statusLower === "pending") {
       return (
         <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
           Đang xử lý
@@ -332,35 +271,91 @@ export default function ViewExportPage() {
     }
   };
 
-  const getTotalQuantity = (request: RequestExport) => {
-    return request.requestExportDetails.reduce(
-      (sum, detail) => sum + detail.requestedQuantity,
-      0
-    );
-  };
-
-  const handleViewDetail = (request: RequestExport) => {
-    setSelectedRequest(request);
-    setIsDetailOpen(true);
-  };
-
-  const getProductNames = (request: RequestExport) => {
-    return request.requestExportDetails
+  const getProductNames = (receipt: ExportWarehouseReceipt) => {
+    return receipt.details
       .map((detail) => {
-        const productName =
-          detail.productDetail?.productName || `Sản phẩm ${detail.productId}`;
-        return `${productName} (${detail.requestedQuantity})`;
+        return `${detail.productName} (${detail.quantity})`;
       })
       .join(", ");
   };
 
+  const handleViewDetail = (receipt: ExportWarehouseReceipt) => {
+    setSelectedReceipt(receipt);
+    setIsDetailOpen(true);
+  };
+
+  const RequestCard = ({ receipt }: { receipt: ExportWarehouseReceipt }) => (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="flex items-center">
+              <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
+              <CardTitle className="text-base">
+                PXK #{receipt.exportWarehouseReceiptId}
+              </CardTitle>
+            </div>
+            <CardDescription className="text-xs mt-1">
+              <div className="flex items-center">
+                <FileText className="h-3 w-3 mr-1 text-muted-foreground" />
+                <span className="font-mono">{receipt.documentNumber}</span>
+              </div>
+            </CardDescription>
+          </div>
+          {getStatusBadge(receipt.status)}
+        </div>
+      </CardHeader>
+      <CardContent className="pb-2 pt-0">
+        <div className="space-y-2 text-sm">
+          <div>
+            <p className="text-muted-foreground text-xs">Sản phẩm:</p>
+            <p
+              className="font-medium truncate"
+              title={getProductNames(receipt)}
+            >
+              <Package className="h-3 w-3 mr-1 inline text-muted-foreground" />
+              {getProductNames(receipt)}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-muted-foreground text-xs">Ngày xuất:</p>
+              <p className="font-medium">
+                <Calendar className="h-3 w-3 mr-1 inline text-muted-foreground" />
+                {formatDate(receipt.exportDate)}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs">Số lượng:</p>
+              <p className="font-medium">
+                <Package className="h-3 w-3 mr-1 inline text-muted-foreground" />
+                {receipt.totalQuantity.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="pt-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          onClick={() => handleViewDetail(receipt)}
+        >
+          <FileText className="h-4 w-4 mr-1" />
+          Chi tiết
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+
   const handleCreateExport = async () => {
-    if (!selectedRequest) return;
+    if (!selectedReceipt) return;
 
     setIsCreatingExport(true);
     try {
       const response = await axios.post(
-        `${API_URL}WarehouseExport/finalize-export-sale/${selectedRequest.requestExportId}`,
+        `${API_URL}WarehouseExport/finalize-export-sale/${selectedReceipt.exportWarehouseReceiptId}`,
         null,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -369,9 +364,10 @@ export default function ViewExportPage() {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Đã tạo phiếu xuất kho thành công");
-        setExportRequests((prevRequests) =>
-          prevRequests.map((req) =>
-            req.requestExportId === selectedRequest.requestExportId
+        setExportReceipts((prevReceipts) =>
+          prevReceipts.map((req) =>
+            req.exportWarehouseReceiptId ===
+            selectedReceipt.exportWarehouseReceiptId
               ? { ...req, status: "PROCESSING" }
               : req
           )
@@ -388,89 +384,11 @@ export default function ViewExportPage() {
     }
   };
 
-  // ------------------
-  // Component hiển thị theo dạng card trên mobile
-  // ------------------
-  const RequestCard = ({ request }: { request: RequestExport }) => (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <div>
-            <div className="flex items-center">
-              <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-              <CardTitle className="text-base">
-                YC #{request.requestExportId}
-              </CardTitle>
-            </div>
-            <CardDescription className="text-xs mt-1">
-              <div className="flex items-center">
-                <FileText className="h-3 w-3 mr-1 text-muted-foreground" />
-                <span className="font-mono">
-                  {request.requestExportCode}...
-                </span>
-              </div>
-            </CardDescription>
-          </div>
-          {getStatusBadge(request.status)}
-        </div>
-      </CardHeader>
-      <CardContent className="pb-2 pt-0">
-        <div className="space-y-2 text-sm">
-          <div>
-            <p className="text-muted-foreground text-xs">Sản phẩm:</p>
-            <p
-              className="font-medium truncate"
-              title={getProductNames(request)}
-            >
-              <Package className="h-3 w-3 mr-1 inline text-muted-foreground" />
-              {getProductNames(request)}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-muted-foreground text-xs">Ngày duyệt:</p>
-              <p className="font-medium">
-                <Calendar className="h-3 w-3 mr-1 inline text-muted-foreground" />
-                {formatDate(request.approvedDate)}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Số lượng:</p>
-              <p className="font-medium">
-                <Package className="h-3 w-3 mr-1 inline text-muted-foreground" />
-                {getTotalQuantity(request).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="pt-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full"
-          onClick={() => handleViewDetail(request)}
-        >
-          <FileText className="h-4 w-4 mr-1" />
-          Chi tiết
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-
-  const getTotalValue = (request: RequestExport) => {
-    return request.requestExportDetails.reduce((sum, detail) => {
-      const product = productCache.get(detail.productId);
-      const price = product?.price || 0;
-      return sum + price * detail.requestedQuantity;
-    }, 0);
-  };
-
   return (
     <div className="space-y-6 px-2 sm:px-4">
       <div>
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-          Yêu cầu xuất kho
+          Phiếu xuất kho
         </h2>
       </div>
 
@@ -485,7 +403,7 @@ export default function ViewExportPage() {
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <CardTitle className="text-lg">
-                  Danh sách yêu cầu xuất kho
+                  Danh sách phiếu xuất kho
                 </CardTitle>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center w-full sm:w-auto gap-2">
                   <div className="relative w-full sm:w-[250px]">
@@ -513,7 +431,7 @@ export default function ViewExportPage() {
                   <Select
                     value={itemsPerPage.toString()}
                     onValueChange={(value) => {
-                      setItemsPerPage(parseInt(value));
+                      setItemsPerPage(Number.parseInt(value));
                       setCurrentPage(1);
                     }}
                   >
@@ -527,7 +445,7 @@ export default function ViewExportPage() {
                       <SelectItem value="50">50</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={fetchExportRequests}>
+                  <Button variant="outline" onClick={fetchExportReceipts}>
                     <RefreshCcw className="h-4 w-4 mr-2" />
                     Làm mới
                   </Button>
@@ -542,15 +460,15 @@ export default function ViewExportPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       <span className="ml-3">Đang tải...</span>
                     </div>
-                  ) : filteredRequests.length === 0 ? (
+                  ) : filteredReceipts.length === 0 ? (
                     <div className="text-center py-8">
                       Không tìm thấy yêu cầu xuất kho nào
                     </div>
                   ) : (
-                    filteredRequests.map((request) => (
+                    filteredReceipts.map((receipt) => (
                       <RequestCard
-                        key={request.requestExportId}
-                        request={request}
+                        key={receipt.exportWarehouseReceiptId}
+                        receipt={receipt}
                       />
                     ))
                   )}
@@ -560,16 +478,12 @@ export default function ViewExportPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[80px]">Mã YC</TableHead>
+                        <TableHead className="w-[80px]">Mã PXK</TableHead>
+                        <TableHead className="w-[180px]">Số chứng từ</TableHead>
                         <TableHead className="w-[180px]">Mã đơn hàng</TableHead>
                         <TableHead className="w-[180px]">Tên đại lý</TableHead>
-                        <TableHead className="w-[180px]">
-                          Người duyệt xuất kho
-                        </TableHead>
                         {!isTablet && <TableHead>Sản phẩm</TableHead>}
-                        <TableHead className="text-center">
-                          Ngày duyệt
-                        </TableHead>
+                        <TableHead className="text-center">Ngày xuất</TableHead>
                         <TableHead className="text-center">Số lượng</TableHead>
                         <TableHead className="text-center">
                           Trạng thái
@@ -590,42 +504,44 @@ export default function ViewExportPage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ) : filteredRequests.length === 0 ? (
+                      ) : filteredReceipts.length === 0 ? (
                         <TableRow>
                           <TableCell
                             colSpan={isTablet ? 8 : 9}
                             className="text-center h-24"
                           >
-                            Không tìm thấy yêu cầu xuất kho nào
+                            Không tìm thấy phiếu xuất kho nào
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredRequests.map((request) => (
-                          <TableRow key={request.requestExportId}>
+                        filteredReceipts.map((receipt) => (
+                          <TableRow key={receipt.exportWarehouseReceiptId}>
                             <TableCell className="font-medium">
                               <div className="flex items-center">
                                 <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.requestExportId}
+                                {receipt.exportWarehouseReceiptId}
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center">
                                 <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                                 <span className="text-xs font-mono">
-                                  {request.requestExportCode}
+                                  {receipt.documentNumber}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="text-xs font-mono">
+                                  {receipt.orderCode}
                                 </span>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center">
                                 <Building className="h-4 w-4 mr-2 text-gray-500" />
-                                {request.agencyName}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {request.approvedByName}
+                                {receipt.agencyName}
                               </div>
                             </TableCell>
                             {!isTablet && (
@@ -634,9 +550,9 @@ export default function ViewExportPage() {
                                   <Package className="h-4 w-4 mr-2 text-muted-foreground" />
                                   <span
                                     className="truncate max-w-[250px]"
-                                    title={getProductNames(request)}
+                                    title={getProductNames(receipt)}
                                   >
-                                    {getProductNames(request)}
+                                    {getProductNames(receipt)}
                                   </span>
                                 </div>
                               </TableCell>
@@ -644,23 +560,23 @@ export default function ViewExportPage() {
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center">
                                 <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {formatDate(request.approvedDate)}
+                                {formatDate(receipt.exportDate)}
                               </div>
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center">
                                 <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                                {getTotalQuantity(request).toLocaleString()}
+                                {receipt.totalQuantity.toLocaleString()}
                               </div>
                             </TableCell>
                             <TableCell className="text-center">
-                              {getStatusBadge(request.status)}
+                              {getStatusBadge(receipt.status)}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleViewDetail(request)}
+                                onClick={() => handleViewDetail(receipt)}
                               >
                                 <FileText className="h-4 w-4 mr-1" />
                                 Chi tiết
@@ -677,8 +593,8 @@ export default function ViewExportPage() {
             <CardFooter className="flex justify-between items-center border-t px-4 sm:px-6 py-4">
               <div className="text-sm text-muted-foreground">
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, exportRequests.length)} /{" "}
-                {exportRequests.length} yêu cầu
+                {Math.min(currentPage * itemsPerPage, exportReceipts.length)} /{" "}
+                {exportReceipts.length} phiếu xuất
               </div>
               <Pagination>
                 <PaginationContent>
@@ -712,13 +628,13 @@ export default function ViewExportPage() {
                   )}
 
                   {Array.from(
-                    { length: Math.ceil(exportRequests.length / itemsPerPage) },
+                    { length: Math.ceil(exportReceipts.length / itemsPerPage) },
                     (_, i) => i + 1
                   )
                     .slice(
                       Math.max(0, currentPage - 3),
                       Math.min(
-                        Math.ceil(exportRequests.length / itemsPerPage),
+                        Math.ceil(exportReceipts.length / itemsPerPage),
                         currentPage + 2
                       )
                     )
@@ -735,7 +651,7 @@ export default function ViewExportPage() {
                     ))}
 
                   {currentPage <
-                    Math.ceil(exportRequests.length / itemsPerPage) - 2 && (
+                    Math.ceil(exportReceipts.length / itemsPerPage) - 2 && (
                     <>
                       <PaginationItem>
                         <span>...</span>
@@ -744,12 +660,12 @@ export default function ViewExportPage() {
                         <PaginationLink
                           onClick={() =>
                             setCurrentPage(
-                              Math.ceil(exportRequests.length / itemsPerPage)
+                              Math.ceil(exportReceipts.length / itemsPerPage)
                             )
                           }
                           className="cursor-pointer"
                         >
-                          {Math.ceil(exportRequests.length / itemsPerPage)}
+                          {Math.ceil(exportReceipts.length / itemsPerPage)}
                         </PaginationLink>
                       </PaginationItem>
                     </>
@@ -761,13 +677,13 @@ export default function ViewExportPage() {
                         setCurrentPage((prev) =>
                           Math.min(
                             prev + 1,
-                            Math.ceil(exportRequests.length / itemsPerPage)
+                            Math.ceil(exportReceipts.length / itemsPerPage)
                           )
                         )
                       }
                       className={
                         currentPage ===
-                        Math.ceil(exportRequests.length / itemsPerPage)
+                        Math.ceil(exportReceipts.length / itemsPerPage)
                           ? "pointer-events-none opacity-50"
                           : "cursor-pointer"
                       }
@@ -791,27 +707,33 @@ export default function ViewExportPage() {
         </TabsContent>
       </Tabs>
 
-      {selectedRequest && (
+      {selectedReceipt && (
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
           <DialogContent className="sm:max-w-[1000px]">
             <DialogHeader>
-              <DialogTitle>Chi tiết yêu cầu xuất kho</DialogTitle>
+              <DialogTitle>Chi tiết phiếu xuất kho</DialogTitle>
               <DialogDescription>
-                Thông tin chi tiết yêu cầu xuất kho #
-                {selectedRequest.requestExportId}
+                Thông tin chi tiết phiếu xuất kho #
+                {selectedReceipt.exportWarehouseReceiptId}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium flex items-center">
                   <FileText className="h-4 w-4 mr-2" />
-                  Thông tin yêu cầu
+                  Thông tin phiếu xuất
                 </h3>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Mã yêu cầu:</p>
-                    <p className="font-medium">
-                      {selectedRequest.requestExportId}
+                    <p className="text-sm text-muted-foreground">Loại xuất:</p>
+                    <p className="font-medium">{selectedReceipt.exportType}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Số chứng từ:
+                    </p>
+                    <p className="font-mono text-xs">
+                      {selectedReceipt.documentNumber}
                     </p>
                   </div>
                   <div>
@@ -819,25 +741,25 @@ export default function ViewExportPage() {
                       Mã đơn hàng:
                     </p>
                     <p className="font-mono text-xs">
-                      {selectedRequest.requestExportCode}
+                      {selectedReceipt.orderCode}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Ngày duyệt:</p>
+                    <p className="text-sm text-muted-foreground">Ngày xuất:</p>
                     <p className="font-medium">
-                      {formatDate(selectedRequest.approvedDate)}
+                      {formatDate(selectedReceipt.exportDate)}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Trạng thái:</p>
-                    <div>{getStatusBadge(selectedRequest.status)}</div>
+                    <div>{getStatusBadge(selectedReceipt.status)}</div>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">
                       Tổng số lượng:
                     </p>
                     <p className="font-medium">
-                      {getTotalQuantity(selectedRequest)}
+                      {selectedReceipt.totalQuantity}
                     </p>
                   </div>
                   <div>
@@ -845,14 +767,12 @@ export default function ViewExportPage() {
                       Tổng giá trị:
                     </p>
                     <p className="font-medium">
-                      {getTotalValue(selectedRequest).toLocaleString()} đ
+                      {selectedReceipt.totalAmount.toLocaleString()} đ
                     </p>
                   </div>
-                  <div className="sm:col-span-2">
-                    <p className="text-sm text-muted-foreground">Ghi chú:</p>
-                    <p className="font-medium">
-                      {selectedRequest.note || "Order approved and exported"}
-                    </p>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Đại lý:</p>
+                    <p className="font-medium">{selectedReceipt.agencyName}</p>
                   </div>
                 </div>
               </div>
@@ -868,42 +788,33 @@ export default function ViewExportPage() {
                       <TableRow>
                         <TableHead className="w-[80px]">Mã SP</TableHead>
                         <TableHead>Tên sản phẩm</TableHead>
-                        <TableHead className="text-center">Đơn vị</TableHead>
+                        <TableHead className="text-center">Lô</TableHead>
                         <TableHead className="text-center">Số lượng</TableHead>
                         <TableHead className="text-right">Đơn giá</TableHead>
                         <TableHead className="text-right">Thành tiền</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedRequest.requestExportDetails.map((detail) => {
-                        const product = productCache.get(detail.productId);
-                        const price = product?.price || 0;
-                        const total = price * detail.requestedQuantity;
-
-                        return (
-                          <TableRow key={detail.requestExportDetailId}>
-                            <TableCell className="font-medium">
-                              SP{String(detail.productId).padStart(3, "0")}
-                            </TableCell>
-                            <TableCell>
-                              {product?.productName ||
-                                `Sản phẩm ${detail.productId}`}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {product?.unit || "Cái"}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {detail.requestedQuantity}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {price.toLocaleString()} đ
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {total.toLocaleString()} đ
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {selectedReceipt.details.map((detail) => (
+                        <TableRow key={detail.warehouseProductId}>
+                          <TableCell className="font-medium">
+                            SP{String(detail.productId).padStart(3, "0")}
+                          </TableCell>
+                          <TableCell>{detail.productName}</TableCell>
+                          <TableCell className="text-center">
+                            {detail.batchNumber}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {detail.quantity}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {detail.unitPrice.toLocaleString()} đ
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {detail.totalProductAmount.toLocaleString()} đ
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -911,7 +822,7 @@ export default function ViewExportPage() {
                   <div className="text-right">
                     <p className="text-sm font-medium">
                       Tổng giá trị:{" "}
-                      {getTotalValue(selectedRequest).toLocaleString()} VNĐ
+                      {selectedReceipt.totalAmount.toLocaleString()} VNĐ
                     </p>
                   </div>
                 </div>
@@ -919,7 +830,7 @@ export default function ViewExportPage() {
             </div>
             <DialogFooter className="flex justify-between items-center">
               <div>
-                {selectedRequest.status.toLowerCase() === "requested" && (
+                {selectedReceipt.status.toLowerCase() === "pending" && (
                   <Button
                     variant="default"
                     className="bg-green-600 hover:bg-green-700"
@@ -934,7 +845,7 @@ export default function ViewExportPage() {
                     ) : (
                       <>
                         <FileOutput className="h-4 w-4 mr-2" />
-                        Làm đơn xuất kho
+                        Xử lý đơn hàng
                       </>
                     )}
                   </Button>

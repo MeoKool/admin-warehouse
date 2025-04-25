@@ -8,7 +8,6 @@ import {
   Warehouse,
   BarChart3,
   PackagePlus,
-  PackageMinus,
   Eye,
   PackageSearch,
 } from "lucide-react";
@@ -36,11 +35,11 @@ const menuItems = [
     path: "/warehouse/view-export/",
     icon: <Eye className="h-5 w-5" />,
   },
-  {
-    title: "Xuất sản phẩm",
-    path: "/warehouse/export",
-    icon: <PackageMinus className="h-5 w-5" />,
-  },
+  // {
+  //   title: "Xuất sản phẩm",
+  //   path: "/warehouse/export",
+  //   icon: <PackageMinus className="h-5 w-5" />,
+  // },
   // {
   //   title: "Duyệt đơn xuất kho",
   //   path: "/warehouse/export/approval",
