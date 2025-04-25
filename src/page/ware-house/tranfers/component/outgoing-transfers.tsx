@@ -56,10 +56,8 @@ export function OutgoingTransfers({
     setProcessingTransferId(transferId);
     try {
       const response = await axios.post(
-        `${API_URL}WarehouseReceipt/from-transfer`,
-        {
-          warehouseTransferRequestId: transferId,
-        },
+        `${API_URL}warehouse-receipts/import-transfer-approved/${transferId}`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,9 +75,8 @@ export function OutgoingTransfers({
       } else {
         throw new Error("Không thể nhập điều phối");
       }
-    } catch (error) {
-      console.error("Error importing transfer:", error);
-      toast.error("Không thể nhập điều phối. Vui lòng thử lại sau.");
+    } catch (error: any) {
+      toast.error(error.response.data.message);
     } finally {
       setProcessingTransferId(null);
     }

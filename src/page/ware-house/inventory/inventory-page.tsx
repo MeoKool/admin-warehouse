@@ -102,11 +102,14 @@ export default function InventoryPage() {
   const fetchInventory = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}${warehouseId}/products`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(
+        `${API_URL}batch/batches/warehouse/${warehouseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (Array.isArray(response.data)) {
         setInventoryItems(response.data);
