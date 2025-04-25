@@ -177,11 +177,11 @@ export function OutgoingTransfers({
                 <TableCell className="font-medium">
                   <div className="flex items-center">
                     <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{transfer.requestCode}</span>
+                    <span>{transfer.id}</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span>{transfer.orderCode || "N/A"}</span>
+                  <span>{transfer.requestExportId || "N/A"}</span>
                 </TableCell>
                 <TableCell> {transfer.sourceWarehouseName}</TableCell>
                 <TableCell> {transfer.destinationWarehouseName}</TableCell>

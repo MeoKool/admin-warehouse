@@ -123,11 +123,11 @@ export function TransferDetailsDialog({
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Mã yêu cầu:</p>
-                <p className="font-medium">{transfer.requestCode}</p>
+                <p className="font-medium">{transfer.id}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Mã đơn hàng:</p>
-                <p className="font-medium">{transfer.orderCode}</p>
+                <p className="text-sm text-muted-foreground">Mã đơn xuất:</p>
+                <p className="font-medium">{transfer.requestExportId}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Kho chuyển đi:</p>
@@ -180,13 +180,16 @@ export function TransferDetailsDialog({
                               {product.productDetails.productCode})
                             </>
                           ) : (
-                            <>Sản phẩm ID: {product.productId}</>
+                            <>Sản phẩm: {product.productName}</>
                           )}
                         </CardTitle>
                       </div>
-                      <Badge variant="outline">
-                        {product.quantity} {product.unit}
-                      </Badge>
+                      <div>
+                        Số lượng:{" "}
+                        <Badge variant="outline">
+                          {product.quantity} {product.unit}
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-2">

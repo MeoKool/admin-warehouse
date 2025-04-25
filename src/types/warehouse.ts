@@ -23,6 +23,7 @@ export interface Product {
   quantity: number;
   unit: string;
   notes: string;
+  productName: string;
   productDetails?: ProductDetails;
 }
 
@@ -39,6 +40,7 @@ export interface WarehouseTransfer {
   products: Product[];
   sourceWarehouseName: string;
   destinationWarehouseName: string;
+  requestExportId: string;
 }
 
 // Interface for Warehouse Information

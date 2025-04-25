@@ -189,7 +189,7 @@ export function WarehouseTransferDetail({
                                   {product.productDetails.productCode})
                                 </>
                               ) : (
-                                <>Sản phẩm ID: {product.productId}</>
+                                <>Sản phẩm: {product.productName}</>
                               )}
                             </CardTitle>
                           </div>
