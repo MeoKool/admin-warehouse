@@ -125,7 +125,6 @@ export default function ViewExportPage() {
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
   const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId") || "3";
   const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   // ------------------
@@ -361,13 +360,9 @@ export default function ViewExportPage() {
     setIsCreatingExport(true);
     try {
       const response = await axios.post(
-        `${API_URL}export-receipts/create-from-request`,
+        `${API_URL}WarehouseExport/finalize-export-sale/${selectedRequest.requestExportId}`,
         null,
         {
-          params: {
-            requestExportId: selectedRequest.requestExportId,
-            warehouseId: warehouseId,
-          },
           headers: { Authorization: `Bearer ${token}` },
         }
       );
@@ -385,9 +380,9 @@ export default function ViewExportPage() {
       } else {
         throw new Error("Không thể tạo phiếu xuất kho");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating export:", error);
-      toast.error("Không thể tạo phiếu xuất kho. Vui lòng thử lại sau.");
+      toast.error(error.response.data.message);
     } finally {
       setIsCreatingExport(false);
     }
