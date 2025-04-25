@@ -1,8 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import type { WarehouseTransfer } from "@/types/warehouse";
 import {
@@ -19,7 +16,6 @@ import {
 } from "@/lib/transfer-api";
 import { OutgoingTransfers } from "./component/outgoing-transfers";
 import { IncomingTransfers } from "./component/incoming-transfers";
-import { CreateTransferDialog } from "./component/create-transfer-dialog";
 
 export default function WarehouseTransfersPage() {
   const [activeTab, setActiveTab] = useState("outgoing");
@@ -30,7 +26,6 @@ export default function WarehouseTransfersPage() {
     WarehouseTransfer[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -70,14 +65,6 @@ export default function WarehouseTransfersPage() {
     }
   };
 
-  const handleTransferCreated = () => {
-    if (warehouseId) {
-      loadTransferData(warehouseId);
-    }
-    setIsCreateDialogOpen(false);
-    toast.success("Đã tạo yêu cầu chuyển kho thành công");
-  };
-
   const handleTransferApproved = () => {
     if (warehouseId) {
       loadTransferData(warehouseId);
@@ -93,10 +80,6 @@ export default function WarehouseTransfersPage() {
             Quản lý chuyển kho
           </h1>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Tạo yêu cầu chuyển kho
-        </Button>
       </div>
 
       <Card>
@@ -148,15 +131,6 @@ export default function WarehouseTransfersPage() {
           </Tabs>
         </CardContent>
       </Card>
-
-      {warehouseId && (
-        <CreateTransferDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          sourceWarehouseId={warehouseId}
-          onTransferCreated={handleTransferCreated}
-        />
-      )}
     </div>
   );
 }

@@ -104,8 +104,7 @@ export const createTransfer = async (transferData: any): Promise<void> => {
 export const approveTransfer = async (transferId: number): Promise<void> => {
   try {
     await axios.post(
-      `${API_URL}warehouse-transfer/approve/`,
-      { warehouseTransferRequestId: transferId },
+      `${API_URL}warehouse-transfer/approve/${transferId}`,
       getAuthHeaders()
     );
   } catch (error) {

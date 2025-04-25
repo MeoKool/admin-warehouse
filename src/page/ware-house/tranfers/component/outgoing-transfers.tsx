@@ -17,14 +17,11 @@ import {
   Calendar,
   Package,
   ClipboardList,
-  Download,
 } from "lucide-react";
 import type { WarehouseTransfer } from "@/types/warehouse";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/utils/warehouse-utils"; // Only importing formatDate now
-import { TransferDetailsDialog } from "./transfer-details-dialog";
-import axios from "axios";
-import { toast } from "sonner";
+import { OutgoingTransferDetailsDialog } from "./outgoing-transfer-details-dialog";
 
 interface OutgoingTransfersProps {
   transfers: WarehouseTransfer[];
@@ -40,46 +37,10 @@ export function OutgoingTransfers({
   const [selectedTransfer, setSelectedTransfer] =
     useState<WarehouseTransfer | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [processingTransferId, setProcessingTransferId] = useState<
-    number | null
-  >(null);
-
-  const token = sessionStorage.getItem("token");
-  const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   const handleViewDetails = (transfer: WarehouseTransfer) => {
     setSelectedTransfer(transfer);
     setIsDetailsOpen(true);
-  };
-
-  const handleImportTransfer = async (transferId: number) => {
-    setProcessingTransferId(transferId);
-    try {
-      const response = await axios.post(
-        `${API_URL}warehouse-receipts/import-transfer-approved/${transferId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200 || response.status === 201) {
-        toast.success("Nhập điều phối thành công");
-        // Refresh data if callback provided
-        if (onRefresh) {
-          onRefresh();
-        }
-      } else {
-        throw new Error("Không thể nhập điều phối");
-      }
-    } catch (error: any) {
-      toast.error(error.response.data.message);
-    } finally {
-      setProcessingTransferId(null);
-    }
   };
 
   // Inline function to get status badge styling and label
@@ -207,28 +168,6 @@ export function OutgoingTransfers({
                       <FileText className="h-4 w-4 mr-1" />
                       Chi tiết
                     </Button>
-
-                    {transfer.status.toLowerCase() === "approved" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
-                        onClick={() => handleImportTransfer(transfer.id)}
-                        disabled={processingTransferId === transfer.id}
-                      >
-                        {processingTransferId === transfer.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            Đang xử lý...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="h-4 w-4 mr-1" />
-                            Nhập điều phối
-                          </>
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -238,10 +177,11 @@ export function OutgoingTransfers({
       </div>
 
       {selectedTransfer && (
-        <TransferDetailsDialog
+        <OutgoingTransferDetailsDialog
           transfer={selectedTransfer}
           open={isDetailsOpen}
           onOpenChange={setIsDetailsOpen}
+          onImported={onRefresh}
         />
       )}
     </div>

@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { approveTransfer } from "@/lib/transfer-api";
 import { formatDate } from "@/utils/warehouse-utils"; // Only importing formatDate
-import { TransferDetailsDialog } from "./transfer-details-dialog";
+import { IncomingTransferDetailsDialog } from "./incoming-transfer-details-dialog";
 
 interface IncomingTransfersProps {
   transfers: WarehouseTransfer[];
@@ -56,11 +56,6 @@ export function IncomingTransfers({
   const handleViewDetails = (transfer: WarehouseTransfer) => {
     setSelectedTransfer(transfer);
     setIsDetailsOpen(true);
-  };
-
-  const handleApproveClick = (transfer: WarehouseTransfer) => {
-    setSelectedTransfer(transfer);
-    setIsApproveDialogOpen(true);
   };
 
   const handleApproveConfirm = async () => {
@@ -177,11 +172,11 @@ export function IncomingTransfers({
                 <TableCell className="font-medium">
                   <div className="flex items-center">
                     <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{transfer.requestCode}</span>
+                    <span>{transfer.id}</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span>{transfer.orderCode || "N/A"}</span>
+                  <span>{transfer.requestExportId || "N/A"}</span>
                 </TableCell>
                 <TableCell> {transfer.sourceWarehouseName}</TableCell>
                 <TableCell> {transfer.destinationWarehouseName}</TableCell>
@@ -210,18 +205,6 @@ export function IncomingTransfers({
                       <FileText className="h-4 w-4 mr-1" />
                       Chi tiết
                     </Button>
-                    {transfer.status.toLowerCase() !== "completed" &&
-                      transfer.status.toLowerCase() !== "approved" && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleApproveClick(transfer)}
-                          disabled={isApproving}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Phê duyệt
-                        </Button>
-                      )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -231,10 +214,11 @@ export function IncomingTransfers({
       </div>
 
       {selectedTransfer && (
-        <TransferDetailsDialog
+        <IncomingTransferDetailsDialog
           transfer={selectedTransfer}
           open={isDetailsOpen}
           onOpenChange={setIsDetailsOpen}
+          onApproved={onApproved}
         />
       )}
 

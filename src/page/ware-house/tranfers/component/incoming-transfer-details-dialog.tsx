@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ClipboardList, Package, CheckCircle, Download } from "lucide-react";
+import { ClipboardList, Package, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import type { WarehouseTransfer, Product } from "@/types/warehouse";
@@ -20,7 +20,6 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { approveTransfer } from "@/lib/transfer-api";
-import axios from "axios";
 
 // Format date for display
 export const formatDate = (dateString: string) => {
@@ -99,24 +98,20 @@ export const getStatusBadge = (status: string) => {
   );
 };
 
-interface TransferDetailsDialogProps {
+interface IncomingTransferDetailsDialogProps {
   transfer: WarehouseTransfer;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onApproved?: () => void;
 }
 
-export function TransferDetailsDialog({
+export function IncomingTransferDetailsDialog({
   transfer,
   open,
   onOpenChange,
   onApproved,
-}: TransferDetailsDialogProps) {
+}: IncomingTransferDetailsDialogProps) {
   const [isApproving, setIsApproving] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-
-  const token = sessionStorage.getItem("token");
-  const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   const handleApprove = async () => {
     setIsApproving(true);
@@ -132,37 +127,6 @@ export function TransferDetailsDialog({
       toast.error("Không thể phê duyệt yêu cầu chuyển kho");
     } finally {
       setIsApproving(false);
-    }
-  };
-
-  const handleImportTransfer = async () => {
-    setIsImporting(true);
-    try {
-      const response = await axios.post(
-        `${API_URL}warehouse-receipts/import-transfer-approved/${transfer.id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200 || response.status === 201) {
-        toast.success("Nhập điều phối thành công");
-        if (onApproved) {
-          onApproved();
-        }
-        onOpenChange(false);
-      } else {
-        throw new Error("Không thể nhập điều phối");
-      }
-    } catch (error: any) {
-      console.error("Error importing transfer:", error);
-      toast.error(error.response?.data?.message || "Không thể nhập điều phối");
-    } finally {
-      setIsImporting(false);
     }
   };
 
@@ -254,54 +218,31 @@ export function TransferDetailsDialog({
         </div>
 
         <DialogFooter className="flex flex-col sm:flex-row justify-between sm:justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="destructive" onClick={() => onOpenChange(false)}>
             Đóng
           </Button>
 
-          <div className="flex flex-col sm:flex-row gap-2">
-            {transfer.status.toLowerCase() !== "completed" &&
-              transfer.status.toLowerCase() !== "approved" && (
-                <Button
-                  variant="default"
-                  onClick={handleApprove}
-                  disabled={isApproving}
-                  className="bg-primary"
-                >
-                  {isApproving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Phê duyệt
-                    </>
-                  )}
-                </Button>
-              )}
-
-            {transfer.status.toLowerCase() === "approved" && (
+          {transfer.status.toLowerCase() !== "completed" &&
+            transfer.status.toLowerCase() !== "approved" && (
               <Button
-                variant="outline"
-                onClick={handleImportTransfer}
-                disabled={isImporting}
-                className="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                variant="default"
+                onClick={handleApprove}
+                disabled={isApproving}
+                className="bg-primary"
               >
-                {isImporting ? (
+                {isApproving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Đang xử lý...
                   </>
                 ) : (
                   <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Nhập điều phối
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Phê duyệt
                   </>
                 )}
               </Button>
             )}
-          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

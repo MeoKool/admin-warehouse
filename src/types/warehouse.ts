@@ -21,26 +21,23 @@ export interface ProductDetails {
 export interface Product {
   productId: number;
   quantity: number;
-  unit: string;
-  notes: string;
   productName: string;
-  productDetails?: ProductDetails;
+  // Removed: unit, notes, productDetails
 }
 
 // Interface for Warehouse Transfer
 export interface WarehouseTransfer {
   id: number;
-  requestCode: string;
   sourceWarehouseId: number;
   destinationWarehouseId: number;
   requestDate: string;
   status: string;
   notes: string;
-  orderCode: string;
   products: Product[];
   sourceWarehouseName: string;
   destinationWarehouseName: string;
-  requestExportId: string;
+  requestExportId: number; // Changed from string to number
+  // Removed: requestCode, orderCode
 }
 
 // Interface for Warehouse Information
