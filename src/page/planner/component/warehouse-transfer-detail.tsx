@@ -108,7 +108,7 @@ export function WarehouseTransferDetail({
         <DialogHeader>
           <DialogTitle>Chi tiết yêu cầu chuyển kho</DialogTitle>
           <DialogDescription>
-            Thông tin chi tiết yêu cầu chuyển kho #
+            Thông tin chi tiết yêu cầu chuyển kho
             {detailedTransfer.requestCode}
           </DialogDescription>
         </DialogHeader>

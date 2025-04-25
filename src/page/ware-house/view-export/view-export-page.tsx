@@ -40,6 +40,7 @@ import {
   Building,
   RefreshCcw,
   FileOutput,
+  ArchiveRestore,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -62,6 +63,7 @@ import {
 
 // Import SignalR connection để lắng nghe sự kiện realtime
 import { connection } from "@/lib/signalr-client";
+import { useNavigate } from "react-router-dom";
 
 // ------------------
 // Interfaces
@@ -271,6 +273,19 @@ export default function ViewExportPage() {
     }
   };
 
+  const getExportTypeText = (exportType: string) => {
+    switch (exportType) {
+      case "PendingTransfer":
+        return "Chờ chuyển kho";
+      case "AvailableExport":
+        return "Hàng có sẵn";
+      case "ExportSale":
+        return "Xuất bán hàng";
+      default:
+        return exportType;
+    }
+  };
+
   const getProductNames = (receipt: ExportWarehouseReceipt) => {
     return receipt.details
       .map((detail) => {
@@ -384,6 +399,10 @@ export default function ViewExportPage() {
     }
   };
 
+  const navigate = useNavigate();
+  const handleTranfer = async () => {
+    navigate("/warehouse/transfer-request");
+  };
   return (
     <div className="space-y-6 px-2 sm:px-4">
       <div>
@@ -423,8 +442,8 @@ export default function ViewExportPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                      <SelectItem value="processing">Đang xử lý</SelectItem>
-                      <SelectItem value="approved">Hoàn thành</SelectItem>
+                      <SelectItem value="pending">Đang xử lý</SelectItem>
+                      <SelectItem value="completed">Hoàn thành</SelectItem>
                       <SelectItem value="requested">Đang yêu cầu</SelectItem>
                     </SelectContent>
                   </Select>
@@ -726,7 +745,9 @@ export default function ViewExportPage() {
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Loại xuất:</p>
-                    <p className="font-medium">{selectedReceipt.exportType}</p>
+                    <p className="font-medium">
+                      {getExportTypeText(selectedReceipt.exportType)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">
@@ -829,6 +850,13 @@ export default function ViewExportPage() {
               </div>
             </div>
             <DialogFooter className="flex justify-between items-center">
+              <Button
+                onClick={handleTranfer}
+                className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300"
+              >
+                <ArchiveRestore className="h-4 w-4 mr-2" />
+                Nhập điều phối
+              </Button>
               <div>
                 {selectedReceipt.status.toLowerCase() === "pending" && (
                   <Button
@@ -851,7 +879,10 @@ export default function ViewExportPage() {
                   </Button>
                 )}
               </div>
-              <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
+              <Button
+                variant="destructive"
+                onClick={() => setIsDetailOpen(false)}
+              >
                 Đóng
               </Button>
             </DialogFooter>

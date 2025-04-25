@@ -51,7 +51,7 @@ export const getStatusInfo = (
       color: "text-yellow-800",
       bgColor: "bg-yellow-100",
       hoverColor: "hover:bg-yellow-200",
-      label: "Đang chờ",
+      label: "Chờ xử lý",
       icon: "clock",
     };
   } else if (statusLower === "approved") {
@@ -209,7 +209,7 @@ export function TransferDetailsDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="destructive" onClick={() => onOpenChange(false)}>
             Đóng
           </Button>
         </DialogFooter>
