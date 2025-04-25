@@ -13,17 +13,22 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   {
-    title: "Quản lí Account",
+    title: "Tổng quan",
+    path: "/admin/dashboard",
+    icon: <Users className="h-5 w-5" />,
+  },
+  {
+    title: "Quản lí tài khoản",
     path: "/admin/accounts",
     icon: <Users className="h-5 w-5" />,
   },
   {
-    title: "Xét duyệt Account",
+    title: "Xét duyệt tài khoản",
     path: "/admin/approve",
     icon: <CheckSquare className="h-5 w-5" />,
   },
   {
-    title: "Profile",
+    title: "Trang cá nhân",
     path: "/admin/profile",
     icon: <User className="h-5 w-5" />,
   },
