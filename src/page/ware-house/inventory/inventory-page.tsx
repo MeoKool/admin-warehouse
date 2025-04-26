@@ -56,16 +56,18 @@ import {
 } from "@/components/ui/pagination";
 
 interface InventoryItem {
-  warehouseProductId: number;
   productId: number;
   productName: string;
-  warehouseId: number;
-  batchId: number;
   batchCode: string;
-  expirationDate: string;
+  expiryDate: string;
+  dateOfManufacture: string;
   quantity: number;
-  price: number;
+  totalAmount: number;
+  profitMarginPercent: number;
+  unitCost: number;
+  sellingPrice: number;
   status: string;
+  batchId: number;
 }
 
 interface ProductSummary {
@@ -140,7 +142,7 @@ export default function InventoryPage() {
 
     items.forEach((item) => {
       const existingProduct = productMap.get(item.productId);
-      const expiryDate = new Date(item.expirationDate);
+      const expiryDate = new Date(item.expiryDate);
       const threeMonthsFromNow = new Date();
       threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
       const isNearExpiry = expiryDate <= threeMonthsFromNow;
@@ -254,7 +256,7 @@ export default function InventoryPage() {
 
   const openPricingDialog = (item: InventoryItem) => {
     setSelectedBatch(item);
-    setProfitMargin("10");
+    setProfitMargin(item.profitMarginPercent?.toString() || "10");
     setIsPricingDialogOpen(true);
   };
 
@@ -269,6 +271,7 @@ export default function InventoryPage() {
 
     setIsSubmitting(true);
     try {
+      // Assuming the API endpoint uses batchCode instead of batchId now
       const response = await axios.put(
         `${API_URL}batch/update-profit-margin/${selectedBatch.batchId}/${marginValue}`,
         {},
@@ -340,9 +343,8 @@ export default function InventoryPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               {
-                inventoryItems.filter((item) =>
-                  isNearExpiry(item.expirationDate)
-                ).length
+                inventoryItems.filter((item) => isNearExpiry(item.expiryDate))
+                  .length
               }
             </div>
             <p className="text-xs text-muted-foreground">
@@ -390,7 +392,7 @@ export default function InventoryPage() {
               <Select
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => {
-                  setItemsPerPage(parseInt(value));
+                  setItemsPerPage(Number.parseInt(value));
                   setCurrentPage(1);
                 }}
               >
@@ -415,8 +417,10 @@ export default function InventoryPage() {
                 <TableHead>Tên sản phẩm</TableHead>
                 <TableHead>Mã lô</TableHead>
                 <TableHead>Hạn sử dụng</TableHead>
+                <TableHead>Ngày sản xuất</TableHead>
                 <TableHead>Số lượng</TableHead>
-                <TableHead>Giá tiền đã tính giá</TableHead>
+                <TableHead>Giá nhập</TableHead>
+                <TableHead>Giá bán</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
@@ -424,7 +428,7 @@ export default function InventoryPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-24">
+                  <TableCell colSpan={10} className="text-center h-24">
                     <div className="flex justify-center items-center">
                       <Loader2 className="h-8 w-8 animate-spin" />
                       <span className="ml-3">Đang tải...</span>
@@ -433,13 +437,15 @@ export default function InventoryPage() {
                 </TableRow>
               ) : filteredItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-24">
+                  <TableCell colSpan={10} className="text-center h-24">
                     Không tìm thấy sản phẩm nào
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredItems.map((item) => (
-                  <TableRow key={item.warehouseProductId}>
+                filteredItems.map((item, index) => (
+                  <TableRow
+                    key={`${item.productId}-${item.batchCode}-${index}`}
+                  >
                     <TableCell className="font-medium">
                       {item.productId}
                     </TableCell>
@@ -447,8 +453,8 @@ export default function InventoryPage() {
                     <TableCell>{item.batchCode}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        {formatDate(item.expirationDate)}
-                        {isNearExpiry(item.expirationDate) && (
+                        {formatDate(item.expiryDate)}
+                        {isNearExpiry(item.expiryDate) && (
                           <Badge
                             variant="outline"
                             className="ml-2 bg-red-50 text-red-700 border-red-200"
@@ -458,10 +464,19 @@ export default function InventoryPage() {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell>{formatDate(item.dateOfManufacture)}</TableCell>
                     <TableCell>{item.quantity.toLocaleString()}</TableCell>
                     <TableCell>
-                      {item.price != null
-                        ? item.price.toLocaleString("vi-VN", {
+                      {item.unitCost != null
+                        ? item.unitCost.toLocaleString("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          })
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      {item.sellingPrice != null
+                        ? item.sellingPrice.toLocaleString("vi-VN", {
                             style: "currency",
                             currency: "VND",
                           })
@@ -613,6 +628,17 @@ export default function InventoryPage() {
                 Mã lô
               </Label>
               <div className="col-span-3">{selectedBatch?.batchCode}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="unitCost" className="text-right">
+                Giá nhập
+              </Label>
+              <div className="col-span-3">
+                {selectedBatch?.unitCost?.toLocaleString("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }) || "N/A"}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="profitMargin" className="text-right">
