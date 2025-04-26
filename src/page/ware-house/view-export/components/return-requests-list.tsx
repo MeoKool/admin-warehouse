@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,8 +74,7 @@ export function ReturnRequestsList({
   onRefresh,
   onProcessed,
 }: ReturnRequestsListProps) {
-  const [filteredRequests, setFilteredRequests] =
-    useState<ReturnRequest[]>(returnRequests);
+  const [filteredRequests, setFilteredRequests] = useState<ReturnRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState<ReturnRequest | null>(
@@ -92,6 +91,11 @@ export function ReturnRequestsList({
 
   const token = sessionStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL || "https://api.example.com/";
+
+  // Update filtered requests when returnRequests changes
+  useEffect(() => {
+    filterRequests();
+  }, [returnRequests]);
 
   // Filter return requests
   const filterRequests = () => {
