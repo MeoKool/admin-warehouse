@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { WarehouseTransfer, WarehouseInfo } from "@/types/warehouse";
+import type { WarehouseInfo, WarehouseTransfer } from "@/types/warehouse";
 import type { Product } from "@/types/inventory";
 import { ExportRequest } from "@/types/export";
 
