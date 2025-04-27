@@ -157,7 +157,6 @@ export function IncomingTransfers({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[150px]">Mã yêu cầu</TableHead>
-              <TableHead className="w-[150px]">Mã đơn hàng</TableHead>
               <TableHead>Kho nguồn</TableHead>
               <TableHead>Kho đích</TableHead>
               <TableHead className="text-center">Ngày yêu cầu</TableHead>
@@ -172,12 +171,10 @@ export function IncomingTransfers({
                 <TableCell className="font-medium">
                   <div className="flex items-center">
                     <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{transfer.id}</span>
+                    <span>{transfer.warehouseTranferCode}</span>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <span>{transfer.requestExportId || "N/A"}</span>
-                </TableCell>
+
                 <TableCell> {transfer.sourceWarehouseName}</TableCell>
                 <TableCell> {transfer.destinationWarehouseName}</TableCell>
                 <TableCell className="text-center">

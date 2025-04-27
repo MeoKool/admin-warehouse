@@ -37,7 +37,7 @@ export interface WarehouseTransfer {
   sourceWarehouseName: string;
   destinationWarehouseName: string;
   requestExportId: number; // Changed from string to number
-  // Removed: requestCode, orderCode
+  warehouseTranferCode: string;
 }
 
 // Interface for Warehouse Information

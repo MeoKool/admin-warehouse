@@ -1,5 +1,7 @@
 "use client";
 
+import { CardFooter } from "@/components/ui/card";
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,7 +24,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -38,7 +38,6 @@ import {
   ClipboardList,
   Building,
   RefreshCcw,
-  FileOutput,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -59,6 +58,7 @@ import {
 } from "@/components/ui/pagination";
 import type { ExportWarehouseReceipt } from "@/types/warehouse";
 import { useMediaQuery } from "@/components/hooks/use-media-query";
+import { ExportDetail } from "../../export/component/export-detail";
 
 export function ExportReceiptsList() {
   const [exportReceipts, setExportReceipts] = useState<
@@ -75,7 +75,6 @@ export function ExportReceiptsList() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [isCreatingExport, setIsCreatingExport] = useState(false);
 
   // Check if screen is mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -179,7 +178,7 @@ export function ExportReceiptsList() {
           Hoàn thành
         </Badge>
       );
-    } else if (statusLower === "pending") {
+    } else if (statusLower === "processing") {
       return (
         <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
           Đang xử lý
@@ -209,19 +208,6 @@ export function ExportReceiptsList() {
           {status}
         </Badge>
       );
-    }
-  };
-
-  const getExportTypeText = (exportType: string) => {
-    switch (exportType) {
-      case "PendingTransfer":
-        return "Chờ chuyển kho";
-      case "AvailableExport":
-        return "Hàng có sẵn";
-      case "ExportSale":
-        return "Xuất bán hàng";
-      default:
-        return exportType;
     }
   };
 
@@ -302,41 +288,6 @@ export function ExportReceiptsList() {
       </CardFooter>
     </Card>
   );
-
-  const handleCreateExport = async () => {
-    if (!selectedReceipt) return;
-
-    setIsCreatingExport(true);
-    try {
-      const response = await axios.post(
-        `${API_URL}/WarehouseExport/finalize-export-sale/${selectedReceipt.exportWarehouseReceiptId}`,
-        null,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.status === 200 || response.status === 201) {
-        toast.success("Đã tạo phiếu xuất kho thành công");
-        setExportReceipts((prevReceipts) =>
-          prevReceipts.map((req) =>
-            req.exportWarehouseReceiptId ===
-            selectedReceipt.exportWarehouseReceiptId
-              ? { ...req, status: "PROCESSING" }
-              : req
-          )
-        );
-        setIsDetailOpen(false);
-      } else {
-        throw new Error("Không thể tạo phiếu xuất kho");
-      }
-    } catch (error: any) {
-      console.error("Error creating export:", error);
-      toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
-    } finally {
-      setIsCreatingExport(false);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -635,143 +586,31 @@ export function ExportReceiptsList() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-medium flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Thông tin phiếu xuất
-                </h3>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Loại xuất:</p>
-                    <p className="font-medium">
-                      {getExportTypeText(selectedReceipt.exportType)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Số chứng từ:
-                    </p>
-                    <p className="font-mono text-xs">
-                      {selectedReceipt.documentNumber}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Mã đơn hàng:
-                    </p>
-                    <p className="font-mono text-xs">
-                      {selectedReceipt.orderCode}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Ngày xuất:</p>
-                    <p className="font-medium">
-                      {formatDate(selectedReceipt.exportDate)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Trạng thái:</p>
-                    <div>{getStatusBadge(selectedReceipt.status)}</div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Tổng số lượng:
-                    </p>
-                    <p className="font-medium">
-                      {selectedReceipt.totalQuantity}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Tổng giá trị:
-                    </p>
-                    <p className="font-medium">
-                      {selectedReceipt.totalAmount.toLocaleString()} đ
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Đại lý:</p>
-                    <p className="font-medium">{selectedReceipt.agencyName}</p>
-                  </div>
+              {/* Import and use the ExportDetail component */}
+              {selectedReceipt && (
+                <div className="mt-4">
+                  <ExportDetail
+                    exportData={selectedReceipt}
+                    onApproved={() => {
+                      // Close the dialog
+                      setIsDetailOpen(false);
+                      // Refresh the list
+                      fetchExportReceipts();
+                      // Update the local state to reflect changes immediately
+                      setExportReceipts((prevReceipts) =>
+                        prevReceipts.map((receipt) =>
+                          receipt.exportWarehouseReceiptId ===
+                          selectedReceipt.exportWarehouseReceiptId
+                            ? { ...receipt, status: "APPROVED" }
+                            : receipt
+                        )
+                      );
+                      toast.success("Phiếu xuất kho đã được duyệt thành công");
+                    }}
+                  />
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium flex items-center">
-                  <Package className="h-4 w-4 mr-2" />
-                  Chi tiết sản phẩm
-                </h3>
-                <div className="mt-3 rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">Mã SP</TableHead>
-                        <TableHead>Tên sản phẩm</TableHead>
-                        <TableHead className="text-center">Lô</TableHead>
-                        <TableHead className="text-center">Số lượng</TableHead>
-                        <TableHead className="text-right">Đơn giá</TableHead>
-                        <TableHead className="text-right">Thành tiền</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedReceipt.details.map((detail) => (
-                        <TableRow key={detail.warehouseProductId}>
-                          <TableCell className="font-medium">
-                            SP{String(detail.productId).padStart(3, "0")}
-                          </TableCell>
-                          <TableCell>{detail.productName}</TableCell>
-                          <TableCell className="text-center">
-                            {detail.batchNumber}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {detail.quantity}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {detail.unitPrice.toLocaleString()} đ
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {detail.totalProductAmount.toLocaleString()} đ
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="flex justify-end mt-2">
-                  <div className="text-right">
-                    <p className="text-sm font-medium">
-                      Tổng giá trị:{" "}
-                      {selectedReceipt.totalAmount.toLocaleString()} VNĐ
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="flex justify-between items-center">
-              <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
-                Đóng
-              </Button>
-              {selectedReceipt.status.toLowerCase() === "pending" && (
-                <Button
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={handleCreateExport}
-                  disabled={isCreatingExport}
-                >
-                  {isCreatingExport ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <FileOutput className="h-4 w-4 mr-2" />
-                      Xử lý đơn hàng
-                    </>
-                  )}
-                </Button>
               )}
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       )}
