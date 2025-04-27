@@ -57,12 +57,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import type { ReturnRequest } from "@/types/warehouse";
+import type { ReturnWarehouseReceipt } from "@/types/warehouse";
 import { useMediaQuery } from "@/components/hooks/use-media-query";
 import { ReturnRequestDetail } from "./return-request-detail";
 
 interface ReturnRequestsListProps {
-  returnRequests: ReturnRequest[];
+  returnRequests: ReturnWarehouseReceipt[];
   isLoading: boolean;
   onRefresh: () => void;
   onProcessed: () => void;
@@ -74,12 +74,13 @@ export function ReturnRequestsList({
   onRefresh,
   onProcessed,
 }: ReturnRequestsListProps) {
-  const [filteredRequests, setFilteredRequests] = useState<ReturnRequest[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<
+    ReturnWarehouseReceipt[]
+  >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedRequest, setSelectedRequest] = useState<ReturnRequest | null>(
-    null
-  );
+  const [selectedRequest, setSelectedRequest] =
+    useState<ReturnWarehouseReceipt | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -95,26 +96,26 @@ export function ReturnRequestsList({
   // Update filtered requests when returnRequests changes
   useEffect(() => {
     filterRequests();
-  }, [returnRequests]);
+  }, [returnRequests, searchTerm, statusFilter]);
 
   // Filter return requests
   const filterRequests = () => {
     const filtered = returnRequests.filter((request) => {
       const matchesSearch =
-        request.returnRequestId
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        request.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.createdByUserName
-          .toLowerCase()
+        request.receiptCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.returnWarehouseReceiptId
+          .toString()
           .includes(searchTerm.toLowerCase()) ||
         request.details.some((detail) =>
           detail.productName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
+      // Make sure status comparison is case-insensitive
+      const requestStatus = request.status.toLowerCase();
       const matchesStatus =
         statusFilter === "all" ||
-        request.status.toLowerCase() === statusFilter.toLowerCase();
+        (statusFilter === "pending" && requestStatus === "pending") ||
+        (statusFilter === "imported" && requestStatus === "imported");
 
       return matchesSearch && matchesStatus;
     });
@@ -159,6 +160,12 @@ export function ReturnRequestsList({
           Chờ xử lý
         </Badge>
       );
+    } else if (statusLower === "imported") {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+          Đã nhập kho
+        </Badge>
+      );
     } else if (statusLower === "rejected") {
       return (
         <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
@@ -175,16 +182,16 @@ export function ReturnRequestsList({
   };
 
   // Get product names from return request
-  const getProductNames = (request: ReturnRequest) => {
+  const getProductNames = (request: ReturnWarehouseReceipt) => {
     return request.details
       .map((detail) => {
-        return `${detail.productName} (${detail.quantityReturned})`;
+        return `${detail.productName} (${detail.quantity})`;
       })
       .join(", ");
   };
 
   // Handle view detail
-  const handleViewDetail = (request: ReturnRequest) => {
+  const handleViewDetail = (request: ReturnWarehouseReceipt) => {
     setSelectedRequest(request);
     setIsDetailOpen(true);
   };
@@ -196,7 +203,7 @@ export function ReturnRequestsList({
     setIsProcessing(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/returns/approve/${selectedRequest.returnRequestId}`,
+        `${API_URL}/api/returns/approve/${selectedRequest.returnWarehouseReceiptId}`,
         null,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -225,7 +232,7 @@ export function ReturnRequestsList({
     setIsProcessing(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/returns/reject/${selectedRequest.returnRequestId}`,
+        `${API_URL}/api/returns/reject/${selectedRequest.returnWarehouseReceiptId}`,
         null,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -248,22 +255,20 @@ export function ReturnRequestsList({
   };
 
   // Return request card for mobile view
-  const RequestCard = ({ request }: { request: ReturnRequest }) => (
+  const RequestCard = ({ request }: { request: ReturnWarehouseReceipt }) => (
     <Card className="mb-4">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
             <div className="flex items-center">
               <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-              <CardTitle className="text-base">
-                Trả hàng #{request.returnRequestId.substring(0, 8)}...
-              </CardTitle>
+              <CardTitle className="text-base">{request.receiptCode}</CardTitle>
             </div>
             <CardDescription className="text-xs mt-1">
               <div className="flex items-center">
                 <FileText className="h-3 w-3 mr-1 text-muted-foreground" />
                 <span className="font-mono">
-                  {request.orderId.substring(0, 8)}...
+                  ID: {request.returnWarehouseReceiptId}
                 </span>
               </div>
             </CardDescription>
@@ -288,12 +293,12 @@ export function ReturnRequestsList({
               <p className="text-muted-foreground text-xs">Ngày tạo:</p>
               <p className="font-medium">
                 <Calendar className="h-3 w-3 mr-1 inline text-muted-foreground" />
-                {formatDate(request.createdAt)}
+                {formatDate(request.receiptDate)}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Người tạo:</p>
-              <p className="font-medium">{request.createdByUserName}</p>
+              <p className="text-muted-foreground text-xs">Ghi chú:</p>
+              <p className="font-medium">{request.note || "N/A"}</p>
             </div>
           </div>
         </div>
@@ -319,7 +324,7 @@ export function ReturnRequestsList({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Tìm theo mã đơn, sản phẩm..."
+            placeholder="Tìm theo mã phiếu, sản phẩm..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => {
@@ -343,8 +348,7 @@ export function ReturnRequestsList({
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="pending">Chờ xử lý</SelectItem>
-              <SelectItem value="approved">Đã duyệt</SelectItem>
-              <SelectItem value="rejected">Đã từ chối</SelectItem>
+              <SelectItem value="imported">Đã nhập kho</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -381,11 +385,14 @@ export function ReturnRequestsList({
             </div>
           ) : filteredRequests.length === 0 ? (
             <div className="text-center py-8">
-              Không tìm thấy yêu cầu trả hàng nào
+              Không tìm thấy phiếu trả hàng nào
             </div>
           ) : (
             filteredRequests.map((request) => (
-              <RequestCard key={request.returnRequestId} request={request} />
+              <RequestCard
+                key={request.returnWarehouseReceiptId}
+                request={request}
+              />
             ))
           )}
         </div>
@@ -394,10 +401,10 @@ export function ReturnRequestsList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[180px]">Mã yêu cầu</TableHead>
-                <TableHead className="w-[180px]">Mã đơn hàng</TableHead>
+                <TableHead className="w-[180px]">Mã phiếu</TableHead>
+                <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead className="w-[150px]">Ngày tạo</TableHead>
-                <TableHead className="w-[150px]">Người tạo</TableHead>
+                <TableHead className="w-[150px]">Ghi chú</TableHead>
                 {!isTablet && <TableHead>Sản phẩm</TableHead>}
                 <TableHead className="text-center">Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
@@ -422,17 +429,17 @@ export function ReturnRequestsList({
                     colSpan={isTablet ? 6 : 7}
                     className="text-center h-24"
                   >
-                    Không tìm thấy yêu cầu trả hàng nào
+                    Không tìm thấy phiếu trả hàng nào
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredRequests.map((request) => (
-                  <TableRow key={request.returnRequestId}>
+                  <TableRow key={request.returnWarehouseReceiptId}>
                     <TableCell className="font-medium">
                       <div className="flex items-center">
                         <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span className="text-xs font-mono">
-                          {request.returnRequestId.substring(0, 8)}...
+                          {request.receiptCode}
                         </span>
                       </div>
                     </TableCell>
@@ -440,17 +447,17 @@ export function ReturnRequestsList({
                       <div className="flex items-center">
                         <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span className="text-xs font-mono">
-                          {request.orderId.substring(0, 8)}...
+                          {request.returnWarehouseReceiptId}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {formatDate(request.createdAt)}
+                        {formatDate(request.receiptDate)}
                       </div>
                     </TableCell>
-                    <TableCell>{request.createdByUserName}</TableCell>
+                    <TableCell>{request.note || "N/A"}</TableCell>
                     {!isTablet && (
                       <TableCell>
                         <div className="flex items-center">
@@ -489,7 +496,7 @@ export function ReturnRequestsList({
         <div className="text-sm text-muted-foreground">
           Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
           {Math.min(currentPage * itemsPerPage, returnRequests.length)} /{" "}
-          {returnRequests.length} yêu cầu trả hàng
+          {returnRequests.length} phiếu trả hàng
         </div>
         <Pagination>
           <PaginationContent>
@@ -590,10 +597,9 @@ export function ReturnRequestsList({
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
           <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
-              <DialogTitle>Chi tiết yêu cầu trả hàng</DialogTitle>
+              <DialogTitle>Chi tiết phiếu trả hàng</DialogTitle>
               <DialogDescription>
-                Thông tin chi tiết yêu cầu trả hàng #
-                {selectedRequest.returnRequestId.substring(0, 8)}...
+                Thông tin chi tiết phiếu trả hàng #{selectedRequest.receiptCode}
               </DialogDescription>
             </DialogHeader>
 

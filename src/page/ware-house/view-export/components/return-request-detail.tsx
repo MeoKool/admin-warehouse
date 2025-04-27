@@ -1,3 +1,4 @@
+import { Package, Tag, FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,11 +10,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Package, Tag } from "lucide-react";
-import type { ReturnRequest } from "@/types/warehouse";
+import type { ReturnWarehouseReceipt } from "@/types/warehouse";
 
 interface ReturnRequestDetailProps {
-  request: ReturnRequest;
+  request: ReturnWarehouseReceipt;
 }
 
 export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
@@ -49,6 +49,12 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
           Chờ xử lý
         </Badge>
       );
+    } else if (statusLower === "imported") {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+          Đã nhập kho
+        </Badge>
+      );
     } else if (statusLower === "rejected") {
       return (
         <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
@@ -66,10 +72,7 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
 
   // Calculate total quantity
   const getTotalQuantity = () => {
-    return request.details.reduce(
-      (sum, detail) => sum + detail.quantityReturned,
-      0
-    );
+    return request.details.reduce((sum, detail) => sum + detail.quantity, 0);
   };
 
   return (
@@ -79,28 +82,30 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
           <CardContent className="pt-6">
             <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center">
               <FileText className="h-4 w-4 mr-2" />
-              Thông tin yêu cầu trả hàng
+              Thông tin phiếu trả hàng
             </h3>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-1">
-                <div className="text-sm font-medium">Mã yêu cầu:</div>
+                <div className="text-sm font-medium">Mã phiếu:</div>
                 <div className="text-sm font-mono text-xs">
-                  {request.returnRequestId}
+                  {request.receiptCode}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                <div className="text-sm font-medium">Mã đơn hàng:</div>
+                <div className="text-sm font-medium">ID phiếu:</div>
                 <div className="text-sm font-mono text-xs">
-                  {request.orderId}
+                  {request.returnWarehouseReceiptId}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Ngày tạo:</div>
-                <div className="text-sm">{formatDate(request.createdAt)}</div>
+                <div className="text-sm">{formatDate(request.receiptDate)}</div>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                <div className="text-sm font-medium">Người tạo:</div>
-                <div className="text-sm">{request.createdByUserName}</div>
+                <div className="text-sm font-medium">Mã yêu cầu trả:</div>
+                <div className="text-sm">
+                  {request.returnRequestId || "N/A"}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Trạng thái:</div>
@@ -134,35 +139,31 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mã chi tiết</TableHead>
-                <TableHead>Mã chi tiết đơn hàng</TableHead>
+                <TableHead>ID chi tiết</TableHead>
                 <TableHead>Tên sản phẩm</TableHead>
                 <TableHead>Lý do trả</TableHead>
+                <TableHead>Mã lô</TableHead>
                 <TableHead className="text-center">Số lượng trả</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {request.details.map((detail) => (
-                <TableRow key={detail.returnRequestDetailId}>
+                <TableRow key={detail.returnWarehouseReceiptDetailId}>
                   <TableCell className="font-medium">
                     <div className="flex items-center">
                       <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span className="text-xs font-mono">
-                        {detail.returnRequestDetailId.substring(0, 8)}...
+                        {detail.returnWarehouseReceiptDetailId}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <span className="text-xs font-mono">
-                      {detail.orderDetailId.substring(0, 8)}...
-                    </span>
-                  </TableCell>
                   <TableCell>{detail.productName}</TableCell>
                   <TableCell>{detail.reason}</TableCell>
+                  <TableCell>{detail.batchId}</TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center">
                       <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {detail.quantityReturned.toLocaleString()}
+                      {detail.quantity.toLocaleString()}
                     </div>
                   </TableCell>
                 </TableRow>

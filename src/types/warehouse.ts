@@ -73,6 +73,9 @@ export interface WarehouseTransfer {
 }
 export interface ReturnRequest {
   returnRequestId: string;
+  receiptCode: string;
+  receiptDate: string;
+  warehouseId: number;
   orderId: string;
   createdAt: string;
   createdByUserName: string;
@@ -112,8 +115,30 @@ export interface ExportWarehouseReceipt {
 // Return Request Types
 export interface ReturnRequestDetail {
   returnRequestDetailId: string;
-  orderDetailId: string;
   productName: string;
   reason: string;
-  quantityReturned: number;
+  quantity: number;
+  batchId: string;
+}
+
+// Interface for Return Warehouse Receipt Detail
+export interface ReturnWarehouseReceiptDetail {
+  returnWarehouseReceiptDetailId: number;
+  productName: string;
+  quantity: number;
+  batchId: number;
+  reason: string;
+}
+
+// Interface for Return Warehouse Receipt
+export interface ReturnWarehouseReceipt {
+  returnWarehouseReceiptId: number;
+  receiptCode: string;
+  receiptDate: string;
+  createdAt: string;
+  returnRequestId: string;
+  warehouseId: number;
+  note: string;
+  status: string; // "Pending" | "Imported" etc.
+  details: ReturnWarehouseReceiptDetail[];
 }

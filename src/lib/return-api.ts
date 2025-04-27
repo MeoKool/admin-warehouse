@@ -1,20 +1,23 @@
 import axios from "axios";
 import { toast } from "sonner";
-import type { ReturnRequest } from "@/types/warehouse";
+import type { ReturnWarehouseReceipt } from "@/types/warehouse";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.example.com/";
 
 // Fetch return requests for a warehouse
-export async function fetchReturnRequests(): Promise<ReturnRequest[]> {
+export async function fetchReturnRequests(): Promise<ReturnWarehouseReceipt[]> {
   try {
     const token = sessionStorage.getItem("token");
     if (!token) {
       throw new Error("Không tìm thấy token xác thực");
     }
-
-    const response = await axios.get(`${API_URL}returns/for-warehouse`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const idWarehouseId = sessionStorage.getItem("warehouseId");
+    const response = await axios.get(
+      `${API_URL}returns/warehouse-return/WarehouseReturnByWarehouseId/${idWarehouseId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     if (Array.isArray(response.data)) {
       return response.data;
@@ -33,7 +36,7 @@ export async function fetchReturnRequests(): Promise<ReturnRequest[]> {
 // Fetch details for a specific return request
 export async function fetchReturnRequestDetails(
   returnRequestId: string
-): Promise<ReturnRequest | null> {
+): Promise<ReturnWarehouseReceipt | null> {
   try {
     const token = sessionStorage.getItem("token");
     if (!token) {

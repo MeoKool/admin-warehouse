@@ -13,12 +13,14 @@ import { FileOutput, ArchiveRestore } from "lucide-react";
 import { toast } from "sonner";
 import { ReturnRequestsList } from "./components/return-requests-list";
 import { fetchReturnRequests } from "@/lib/return-api";
-import type { ReturnRequest } from "@/types/warehouse";
+import type { ReturnWarehouseReceipt } from "@/types/warehouse";
 import { ExportReceiptsList } from "./components/export-receipts-list";
 
 export default function ViewExportPage() {
   const [activeTab, setActiveTab] = useState("export-receipts");
-  const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+  const [returnRequests, setReturnRequests] = useState<
+    ReturnWarehouseReceipt[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
 
@@ -51,7 +53,7 @@ export default function ViewExportPage() {
       setReturnRequests(returns);
     } catch (error) {
       console.error("Error loading return data:", error);
-      toast.error("Không thể tải dữ liệu yêu cầu trả hàng");
+      toast.error("Không thể tải dữ liệu phiếu trả hàng");
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +80,7 @@ export default function ViewExportPage() {
         <CardHeader className="pb-3">
           <CardTitle>Quản lý xuất kho</CardTitle>
           <CardDescription>
-            Xem và quản lý phiếu xuất kho và yêu cầu trả hàng
+            Xem và quản lý phiếu xuất kho và phiếu trả hàng
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -100,7 +102,7 @@ export default function ViewExportPage() {
                 className="flex items-center"
               >
                 <ArchiveRestore className="mr-2 h-4 w-4" />
-                Đơn trả hàng
+                Phiếu trả hàng
                 {returnRequests.length > 0 && (
                   <span className="ml-2 bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium">
                     {returnRequests.length}
