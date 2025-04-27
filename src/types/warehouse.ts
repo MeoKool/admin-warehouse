@@ -141,4 +141,5 @@ export interface ReturnWarehouseReceipt {
   note: string;
   status: string; // "Pending" | "Imported" etc.
   details: ReturnWarehouseReceiptDetail[];
+  returnRequestCode: string;
 }

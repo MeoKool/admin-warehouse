@@ -104,7 +104,7 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Mã yêu cầu trả:</div>
                 <div className="text-sm">
-                  {request.returnRequestId || "N/A"}
+                  {request.returnRequestCode || "N/A"}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
