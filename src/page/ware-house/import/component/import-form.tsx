@@ -33,6 +33,7 @@ import { Plus, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 // Định nghĩa các interface
 interface Product {
@@ -65,9 +66,6 @@ interface ImportFormProps {
 
 // Các loại đơn vị được phép
 const ALLOWED_UNITS = ["Chai", "Bao"];
-
-// Các loại nhập kho
-const IMPORT_TYPES = ["Nhập Sản Xuất"];
 
 // Create a forwardRef wrapper for the product selection button
 const ProductSelectButton = forwardRef<
@@ -120,7 +118,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
     documentNumber: `IMP-${format(new Date(), "yyyyMMdd")}-001`,
     importDate: new Date().toISOString().split("T")[0],
     warehouseId: "",
-    importType: "Nhập Sản Xuất",
+    importType: "ImportProduction",
     supplier: "",
     note: "",
   });
@@ -136,7 +134,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
+  const navigate = useNavigate();
   // Set warehouse ID from session storage
   useEffect(() => {
     if (warehouseId) {
@@ -152,7 +150,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
     const fetchProducts = async () => {
       setIsLoadingProducts(true);
       try {
-        const response = await axios.get(`${API_URL}/api/product`, {
+        const response = await axios.get(`${API_URL}product`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -195,10 +193,6 @@ export function ImportForm({ onClose }: ImportFormProps) {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -316,7 +310,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
 
       // Call API to create import
       const response = await axios.post(
-        `${API_URL}/api/WarehouseReceipt/create`,
+        `${API_URL}warehouse-receipts/create`,
         importData,
         {
           headers: {
@@ -328,6 +322,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Tạo phiếu nhập thành công");
+        navigate("/warehouse/inventory");
         onClose();
       } else {
         throw new Error("Failed to create import");
@@ -383,27 +378,6 @@ export function ImportForm({ onClose }: ImportFormProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="importType">
-            Loại nhập <span className="text-red-500">*</span>
-          </Label>
-          <Select
-            value={formData.importType}
-            onValueChange={(value) => handleSelectChange("importType", value)}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn loại nhập" />
-            </SelectTrigger>
-            <SelectContent>
-              {IMPORT_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="space-y-2">
           <Label htmlFor="supplier">
             Nhà cung cấp <span className="text-red-500">*</span>

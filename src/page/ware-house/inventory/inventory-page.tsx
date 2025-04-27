@@ -207,13 +207,13 @@ export default function InventoryPage() {
   // Get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PENDING":
+      case "EXPIRED":
         return (
           <Badge
             variant="outline"
-            className="bg-yellow-50 text-yellow-700 border-yellow-200"
+            className="bg-red-50 text-red-700 border-red-200"
           >
-            Chờ xử lý
+            Hết hạn
           </Badge>
         );
       case "CALCULATING_PRICE":
@@ -454,14 +454,6 @@ export default function InventoryPage() {
                     <TableCell>
                       <div className="flex items-center">
                         {formatDate(item.expiryDate)}
-                        {isNearExpiry(item.expiryDate) && (
-                          <Badge
-                            variant="outline"
-                            className="ml-2 bg-red-50 text-red-700 border-red-200"
-                          >
-                            Sắp hết hạn
-                          </Badge>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(item.dateOfManufacture)}</TableCell>
