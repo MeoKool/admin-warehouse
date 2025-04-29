@@ -17,6 +17,7 @@ import {
   CheckCircle,
   AlertCircle,
   Calendar,
+  Download,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 // Interface cho chi tiết phiếu xuất
 interface ExportReceiptDetail {
@@ -76,6 +78,8 @@ export function ExportDetail({
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] =
     useState<ExportReceiptDetail | null>(null);
+
+  const navigate = useNavigate();
 
   const token = sessionStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -194,17 +198,6 @@ export function ExportDetail({
                 <FileText className="h-4 w-4 mr-2" />
                 Thông tin phiếu xuất
               </h3>
-
-              {canApprove && (
-                <Button
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => openApprovalDialog(exportData.details[0])}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Duyệt đơn xuất kho
-                </Button>
-              )}
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-1">
@@ -326,6 +319,28 @@ export function ExportDetail({
       <Separator />
 
       <div>
+        <div className="flex space-x-2 float-end">
+          {exportData.exportType === "PendingTransfer" && (
+            <Button
+              variant="default"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate(`/warehouse/transfer-request`)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Nhập điều phối
+            </Button>
+          )}
+          {canApprove && (
+            <Button
+              variant="default"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => openApprovalDialog(exportData.details[0])}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Duyệt đơn xuất kho
+            </Button>
+          )}
+        </div>
         <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
           <FileText className="h-4 w-4 mr-2" />
           Ghi chú

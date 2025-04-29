@@ -184,6 +184,12 @@ export function ExportReceiptsList() {
           Đang xử lý
         </Badge>
       );
+    } else if (statusLower === "pending") {
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+          Đang xử lý
+        </Badge>
+      );
     } else if (statusLower === "requested") {
       return (
         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
