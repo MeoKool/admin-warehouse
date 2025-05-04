@@ -236,7 +236,7 @@ export default function InventoryPage() {
             Đã duyệt
           </Badge>
         );
-      case "Canceled":
+      case "CANCELED":
         return (
           <Badge
             variant="outline"
