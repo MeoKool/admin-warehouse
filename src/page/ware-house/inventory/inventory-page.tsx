@@ -42,6 +42,7 @@ import {
   AlertCircle,
   Calculator,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -91,7 +92,8 @@ export default function InventoryPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const token = sessionStorage.getItem("token");
   const warehouseId = sessionStorage.getItem("warehouseId") || "8";
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const API_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:localhost:3000";
 
   const [isPricingDialogOpen, setIsPricingDialogOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<InventoryItem | null>(
@@ -234,6 +236,15 @@ export default function InventoryPage() {
             Đã duyệt
           </Badge>
         );
+      case "Canceled":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-50 text-red-700 border-red-200"
+          >
+            Đã hủy
+          </Badge>
+        );
       default:
         return (
           <Badge
@@ -292,6 +303,31 @@ export default function InventoryPage() {
       toast.error("Không thể cập nhật tỷ lệ lợi nhuận. Vui lòng thử lại sau.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelExpired = async (batchId: number) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.post(
+        `https://minhlong.mlhr.org/api/batch/cancel-expired/${batchId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.status === 200 || response.status === 204) {
+        toast.success("Đã hủy lô hàng hết hạn thành công");
+        fetchInventory();
+      } else {
+        throw new Error("Không thể hủy lô hàng");
+      }
+    } catch (error) {
+      console.error("Error cancelling expired batch:", error);
+      toast.error("Không thể hủy lô hàng. Vui lòng thử lại sau.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -484,6 +520,17 @@ export default function InventoryPage() {
                         >
                           <Calculator className="h-4 w-4 mr-1" />
                           Tính giá
+                        </Button>
+                      )}
+                      {item.status === "EXPIRED" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
+                          onClick={() => handleCancelExpired(item.batchId)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Xuất hủy
                         </Button>
                       )}
                     </TableCell>
