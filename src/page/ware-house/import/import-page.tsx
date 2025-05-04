@@ -51,6 +51,41 @@ import { ImportForm } from "./component/import-form";
 import { ImportDetail } from "./component/import-detail";
 import { useMediaQuery } from "@/components/hooks/use-media-query";
 
+// Add global print styles
+const printStyles = `
+  @media print {
+    /* Hide buttons and footer in print view */
+    .DialogFooter,
+    button {
+      display: none !important;
+    }
+    
+    /* Ensure the dialog content is fully visible */
+    .DialogContent {
+      max-height: none !important;
+      overflow: visible !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: white !important;
+    }
+    
+    /* Hide dialog backdrop */
+    .DialogOverlay {
+      background: none !important;
+    }
+    
+    /* Hide any other elements you don't want to print */
+    @page {
+      size: auto;
+      margin: 10mm;
+    }
+  }
+`;
+
 // Updated interface to match the new data structure
 interface ImportReceipt {
   warehouseReceiptId: number;
@@ -128,6 +163,19 @@ const ImportCard = forwardRef<
 ImportCard.displayName = "ImportCard";
 
 export default function ImportPage() {
+  // Add print styles to document
+  useEffect(() => {
+    // Add print styles to head
+    const style = document.createElement("style");
+    style.innerHTML = printStyles;
+    document.head.appendChild(style);
+
+    // Clean up on unmount
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedImport, setSelectedImport] = useState<ImportReceipt | null>(
@@ -207,6 +255,12 @@ export default function ImportPage() {
 
   const handleCloseImportDialog = () => {
     setIsImportDialogOpen(false);
+  };
+
+  // Print import receipt
+  const handlePrint = () => {
+    if (!selectedImport) return;
+    window.print();
   };
 
   return (
@@ -655,7 +709,7 @@ export default function ImportPage() {
             <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
               Đóng
             </Button>
-            <Button>
+            <Button onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
               In phiếu nhập
             </Button>
