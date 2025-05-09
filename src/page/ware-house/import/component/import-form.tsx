@@ -119,7 +119,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
     importDate: new Date().toISOString().split("T")[0],
     warehouseId: "",
     importType: "ImportProduction",
-    supplier: "",
+    supplier: "Minh Long",
     note: "",
   });
 
