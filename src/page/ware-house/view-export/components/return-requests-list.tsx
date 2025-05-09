@@ -203,7 +203,7 @@ export function ReturnRequestsList({
     setIsProcessing(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/returns/approve/${selectedRequest.returnWarehouseReceiptId}`,
+        `${API_URL}returns/${selectedRequest.returnWarehouseReceiptId}/Import-Damage-Stock`,
         null,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -211,7 +211,6 @@ export function ReturnRequestsList({
       );
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("Đã duyệt yêu cầu trả hàng thành công");
         onProcessed();
         setIsDetailOpen(false);
       } else {
