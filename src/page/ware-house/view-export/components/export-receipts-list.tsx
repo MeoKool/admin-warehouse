@@ -426,7 +426,6 @@ export function ExportReceiptsList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Mã PXK</TableHead>
                 <TableHead className="w-[180px]">Số chứng từ</TableHead>
                 <TableHead className="w-[180px]">Mã đơn hàng</TableHead>
                 <TableHead className="w-[180px]">Tên đại lý</TableHead>
@@ -462,12 +461,6 @@ export function ExportReceiptsList() {
               ) : (
                 filteredReceipts.map((receipt) => (
                   <TableRow key={receipt.exportWarehouseReceiptId}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {receipt.exportWarehouseReceiptId}
-                      </div>
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
