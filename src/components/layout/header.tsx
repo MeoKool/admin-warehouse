@@ -296,8 +296,8 @@ export function Header({ onMenuClick }: HeaderProps) {
                         }`}
                         onClick={() =>
                           markAsRead(
-                            notification.notificationId,
-                            notification.url
+                            notification.notificationId
+                            // notification.url
                           )
                         }
                       >
