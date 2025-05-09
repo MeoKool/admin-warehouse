@@ -449,7 +449,6 @@ export default function InventoryPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mã sản phẩm</TableHead>
                 <TableHead>Tên sản phẩm</TableHead>
                 <TableHead>Mã lô</TableHead>
                 <TableHead>Hạn sử dụng</TableHead>
@@ -482,9 +481,6 @@ export default function InventoryPage() {
                   <TableRow
                     key={`${item.productId}-${item.batchCode}-${index}`}
                   >
-                    <TableCell className="font-medium">
-                      {item.productId}
-                    </TableCell>
                     <TableCell>{item.productName}</TableCell>
                     <TableCell>{item.batchCode}</TableCell>
                     <TableCell>
