@@ -80,7 +80,7 @@ export function AccountDetailDialog({
                   Chi tiết tài khoản
                 </DialogTitle>
                 <DialogDescription className="mt-1">
-                  Thông tin đăng ký của {account.fullName}
+                  Thông tin đăng ký của {account.username}
                 </DialogDescription>
               </div>
               <DialogTrigger asChild>
