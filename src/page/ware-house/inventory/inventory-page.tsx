@@ -182,7 +182,7 @@ export default function InventoryPage() {
         (statusFilter === "calculating" &&
           item.status === "CALCULATING_PRICE") ||
         (statusFilter === "active" && item.status === "ACTIVE") ||
-        (statusFilter === "empty" && item.status === "");
+        (statusFilter === "expired" && item.status === "EXPIRED");
 
       return matchesSearch && matchesStatus;
     });
@@ -422,7 +422,7 @@ export default function InventoryPage() {
                   <SelectItem value="pending">Chờ xử lý</SelectItem>
                   <SelectItem value="active">Đã duyệt</SelectItem>
                   <SelectItem value="calculating">Đang tính giá</SelectItem>
-                  <SelectItem value="empty">Mới</SelectItem>
+                  <SelectItem value="expired">Hết hạn</SelectItem>
                 </SelectContent>
               </Select>
               <Select
