@@ -185,6 +185,7 @@ export function EditAccountDialog({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
+                    disabled
                     control={form.control}
                     name="phone"
                     render={({ field }) => (
