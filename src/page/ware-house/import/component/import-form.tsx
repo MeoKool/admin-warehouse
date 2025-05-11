@@ -119,7 +119,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
     importDate: new Date().toISOString().split("T")[0],
     warehouseId: "",
     importType: "ImportProduction",
-    supplier: "Minh Long",
+    supplier: "",
     note: "",
   });
 
@@ -351,18 +351,6 @@ export function ImportForm({ onClose }: ImportFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="documentNumber">
-            Mã phiếu nhập <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            id="documentNumber"
-            name="documentNumber"
-            value={formData.documentNumber}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="importDate">
             Ngày nhập <span className="text-red-500">*</span>
           </Label>
@@ -375,9 +363,6 @@ export function ImportForm({ onClose }: ImportFormProps) {
             required
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="supplier">
             Nhà cung cấp <span className="text-red-500">*</span>
