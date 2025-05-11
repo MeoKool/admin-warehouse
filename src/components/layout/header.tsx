@@ -144,7 +144,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   // Hàm đánh dấu thông báo đã đọc
-  const markAsRead = async (notificationId: string) => {
+  const markAsRead = async (notificationId: string, url: string) => {
     try {
       await axios.post(
         `https://minhlong.mlhr.org/api/Notification/mark-as-read/${notificationId}`,
@@ -166,7 +166,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       );
 
       // Chuyển hướng đến URL của thông báo
-      // navigate(url);
+      navigate(url);
     } catch (error) {
       console.error("Error marking notification as read:", error);
       toast.error("Không thể đánh dấu thông báo đã đọc");
@@ -296,8 +296,8 @@ export function Header({ onMenuClick }: HeaderProps) {
                         }`}
                         onClick={() =>
                           markAsRead(
-                            notification.notificationId
-                            // notification.url
+                            notification.notificationId,
+                            notification.url
                           )
                         }
                       >
