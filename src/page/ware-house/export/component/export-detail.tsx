@@ -101,7 +101,7 @@ export function ExportDetail({
     if (statusLower === "completed" || statusLower === "approved") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-          Hoàn thành
+          Đã giao hàng
         </Badge>
       );
     } else if (statusLower === "pending") {

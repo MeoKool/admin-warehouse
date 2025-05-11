@@ -131,7 +131,7 @@ export function ExportReceiptsList() {
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
   const token = sessionStorage.getItem("token");
-  const API_URL = import.meta.env.VITE_API_URL || "https://api.example.com/";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   // ------------------
   // Fetch export receipts
@@ -225,7 +225,7 @@ export function ExportReceiptsList() {
     if (statusLower === "completed") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-          Hoàn thành
+          Đã giao hàng
         </Badge>
       );
     } else if (statusLower === "processing") {
@@ -373,7 +373,7 @@ export function ExportReceiptsList() {
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="pending">Đang xử lý</SelectItem>
-              <SelectItem value="completed">Hoàn thành</SelectItem>
+              <SelectItem value="completed">Đã xuất kho</SelectItem>
               <SelectItem value="requested">Đang yêu cầu</SelectItem>
             </SelectContent>
           </Select>
