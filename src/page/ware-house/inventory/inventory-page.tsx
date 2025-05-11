@@ -55,6 +55,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface InventoryItem {
   productId: number;
@@ -79,6 +80,18 @@ interface ProductSummary {
   nearExpiry: number;
 }
 
+interface DamagedStock {
+  createdAt: string;
+  damagedStockId: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  reason: string;
+  status: string;
+  warehouseId: number;
+  warehouseName: string;
+}
+
 export default function InventoryPage() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
@@ -101,6 +114,17 @@ export default function InventoryPage() {
   );
   const [profitMargin, setProfitMargin] = useState<string>("10");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [damagedStocks, setDamagedStocks] = useState<DamagedStock[]>([]);
+  const [filteredDamagedStocks, setFilteredDamagedStocks] = useState<
+    DamagedStock[]
+  >([]);
+  const [damagedStockSearchTerm, setDamagedStockSearchTerm] = useState("");
+  const [damagedStockStatusFilter, setDamagedStockStatusFilter] =
+    useState("all");
+  const [damagedStockCurrentPage, setDamagedStockCurrentPage] = useState(1);
+  const [damagedStockItemsPerPage, setDamagedStockItemsPerPage] = useState(10);
+  const [isDamagedStockLoading, setIsDamagedStockLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("inventory");
 
   // Fetch inventory data
   const fetchInventory = async () => {
@@ -134,9 +158,45 @@ export default function InventoryPage() {
     }
   };
 
+  // Fetch damaged stock data
+  const fetchDamagedStock = async () => {
+    setIsDamagedStockLoading(true);
+    try {
+      const response = await axios.get(
+        `https://minhlong.mlhr.org/api/DamagedStock/warehouse`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (Array.isArray(response.data)) {
+        setDamagedStocks(response.data);
+        setFilteredDamagedStocks(response.data);
+      } else {
+        setDamagedStocks([]);
+        setFilteredDamagedStocks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching damaged stock:", error);
+      toast.error("Không thể tải dữ liệu xuất hủy");
+      setDamagedStocks([]);
+      setFilteredDamagedStocks([]);
+    } finally {
+      setIsDamagedStockLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchInventory();
   }, [API_URL, token, warehouseId]);
+
+  useEffect(() => {
+    if (activeTab === "damaged") {
+      fetchDamagedStock();
+    }
+  }, [activeTab]);
 
   // Generate product summaries
   const generateProductSummaries = (items: InventoryItem[]) => {
@@ -195,6 +255,37 @@ export default function InventoryPage() {
     setFilteredItems(paginatedItems);
   }, [searchTerm, statusFilter, inventoryItems, currentPage, itemsPerPage]);
 
+  // Filter damaged stock items
+  useEffect(() => {
+    const filtered = damagedStocks.filter((item) => {
+      const matchesSearch = item.productName
+        .toLowerCase()
+        .includes(damagedStockSearchTerm.toLowerCase());
+
+      const matchesStatus =
+        damagedStockStatusFilter === "all" ||
+        (damagedStockStatusFilter === "exportcancel" &&
+          item.status === "ExportCancel") ||
+        (damagedStockStatusFilter === "return" && item.status === "Return") ||
+        (damagedStockStatusFilter === "rejected" && item.status === "REJECTED");
+
+      return matchesSearch && matchesStatus;
+    });
+
+    // Tính toán phân trang
+    const indexOfLastItem = damagedStockCurrentPage * damagedStockItemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - damagedStockItemsPerPage;
+    const paginatedItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+
+    setFilteredDamagedStocks(paginatedItems);
+  }, [
+    damagedStockSearchTerm,
+    damagedStockStatusFilter,
+    damagedStocks,
+    damagedStockCurrentPage,
+    damagedStockItemsPerPage,
+  ]);
+
   // Format date for display
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
@@ -252,6 +343,39 @@ export default function InventoryPage() {
             className="bg-gray-50 text-gray-700 border-gray-200"
           >
             Mới
+          </Badge>
+        );
+    }
+  };
+
+  // Get damaged stock status badge
+  const getDamagedStockStatusBadge = (status: string) => {
+    switch (status) {
+      case "ExportCancel":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-50 text-red-700 border-red-200"
+          >
+            Hàng hủy
+          </Badge>
+        );
+      case "Return":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200"
+          >
+            Hàng trả
+          </Badge>
+        );
+      default:
+        return (
+          <Badge
+            variant="outline"
+            className="bg-yellow-50 text-yellow-700 border-yellow-200"
+          >
+            Chờ duyệt
           </Badge>
         );
     }
@@ -337,308 +461,567 @@ export default function InventoryPage() {
         <h2 className="text-2xl font-bold tracking-tight">Kho hàng</h2>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng sản phẩm</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{productSummaries.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {productSummaries
-                .reduce((sum, product) => sum + product.totalQuantity, 0)
-                .toLocaleString()}{" "}
-              đơn vị
-            </p>
-          </CardContent>
-        </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="inventory">Tồn kho</TabsTrigger>
+          <TabsTrigger value="damaged">Xuất hủy</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng lô hàng</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{inventoryItems.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {
-                inventoryItems.filter((item) => item.status === "PENDING")
-                  .length
-              }{" "}
-              lô đang chờ xử lý
-            </p>
-          </CardContent>
-        </Card>
+        <TabsContent value="inventory">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Tổng sản phẩm
+                </CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {productSummaries.length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {productSummaries
+                    .reduce((sum, product) => sum + product.totalQuantity, 0)
+                    .toLocaleString()}{" "}
+                  đơn vị
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sắp hết hạn</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {
-                inventoryItems.filter((item) => isNearExpiry(item.expiryDate))
-                  .length
-              }
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Lô hàng sắp hết hạn trong 3 tháng tới
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Tổng lô hàng
+                </CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {inventoryItems.length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {
+                    inventoryItems.filter((item) => item.status === "PENDING")
+                      .length
+                  }{" "}
+                  lô đang chờ xử lý
+                </p>
+              </CardContent>
+            </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center flex-col sm:flex-row gap-3">
-            <div>
-              <CardTitle>Danh sách sản phẩm trong kho</CardTitle>
-              <CardDescription>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Sắp hết hạn
+                </CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {
+                    inventoryItems.filter((item) =>
+                      isNearExpiry(item.expiryDate)
+                    ).length
+                  }
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Lô hàng sắp hết hạn trong 3 tháng tới
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center flex-col sm:flex-row gap-3">
+                <div>
+                  <CardTitle>Danh sách sản phẩm trong kho</CardTitle>
+                  <CardDescription>
+                    Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      inventoryItems.length
+                    )}{" "}
+                    / {inventoryItems.length} sản phẩm
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="relative w-[250px]">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Tìm theo tên sản phẩm, mã lô..."
+                      className="pl-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                      <SelectItem value="pending">Chờ xử lý</SelectItem>
+                      <SelectItem value="active">Đã duyệt</SelectItem>
+                      <SelectItem value="calculating">Đang tính giá</SelectItem>
+                      <SelectItem value="expired">Hết hạn</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(Number.parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên sản phẩm</TableHead>
+                    <TableHead>Mã lô</TableHead>
+                    <TableHead>Hạn sử dụng</TableHead>
+                    <TableHead>Ngày sản xuất</TableHead>
+                    <TableHead>Số lượng</TableHead>
+                    <TableHead>Giá nhập</TableHead>
+                    <TableHead>Giá bán</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Thao tác</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center h-24">
+                        <div className="flex justify-center items-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                          <span className="ml-3">Đang tải...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center h-24">
+                        Không tìm thấy sản phẩm nào
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredItems.map((item, index) => (
+                      <TableRow
+                        key={`${item.productId}-${item.batchCode}-${index}`}
+                      >
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>{item.batchCode}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            {formatDate(item.expiryDate)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(item.dateOfManufacture)}
+                        </TableCell>
+                        <TableCell>{item.quantity.toLocaleString()}</TableCell>
+                        <TableCell>
+                          {item.unitCost != null
+                            ? item.unitCost.toLocaleString("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              })
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {item.sellingPrice != null
+                            ? item.sellingPrice.toLocaleString("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              })
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(item.status)}</TableCell>
+                        <TableCell>
+                          {item.status === "CALCULATING_PRICE" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPricingDialog(item)}
+                            >
+                              <Calculator className="h-4 w-4 mr-1" />
+                              Tính giá
+                            </Button>
+                          )}
+                          {item.status === "EXPIRED" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
+                              onClick={() => handleCancelExpired(item.batchId)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Xuất hủy
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter className="flex justify-between items-center border-t px-6 py-4">
+              <div className="text-sm text-muted-foreground">
                 Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
                 {Math.min(currentPage * itemsPerPage, inventoryItems.length)} /{" "}
                 {inventoryItems.length} sản phẩm
-              </CardDescription>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="relative w-[250px]">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Tìm theo tên sản phẩm, mã lô..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="pending">Chờ xử lý</SelectItem>
-                  <SelectItem value="active">Đã duyệt</SelectItem>
-                  <SelectItem value="calculating">Đang tính giá</SelectItem>
-                  <SelectItem value="expired">Hết hạn</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={itemsPerPage.toString()}
-                onValueChange={(value) => {
-                  setItemsPerPage(Number.parseInt(value));
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tên sản phẩm</TableHead>
-                <TableHead>Mã lô</TableHead>
-                <TableHead>Hạn sử dụng</TableHead>
-                <TableHead>Ngày sản xuất</TableHead>
-                <TableHead>Số lượng</TableHead>
-                <TableHead>Giá nhập</TableHead>
-                <TableHead>Giá bán</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="text-center h-24">
-                    <div className="flex justify-center items-center">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                      <span className="ml-3">Đang tải...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredItems.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="text-center h-24">
-                    Không tìm thấy sản phẩm nào
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredItems.map((item, index) => (
-                  <TableRow
-                    key={`${item.productId}-${item.batchCode}-${index}`}
-                  >
-                    <TableCell>{item.productName}</TableCell>
-                    <TableCell>{item.batchCode}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        {formatDate(item.expiryDate)}
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatDate(item.dateOfManufacture)}</TableCell>
-                    <TableCell>{item.quantity.toLocaleString()}</TableCell>
-                    <TableCell>
-                      {item.unitCost != null
-                        ? item.unitCost.toLocaleString("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                          })
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {item.sellingPrice != null
-                        ? item.sellingPrice.toLocaleString("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                          })
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(item.status)}</TableCell>
-                    <TableCell>
-                      {item.status === "CALCULATING_PRICE" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openPricingDialog(item)}
-                        >
-                          <Calculator className="h-4 w-4 mr-1" />
-                          Tính giá
-                        </Button>
-                      )}
-                      {item.status === "EXPIRED" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800"
-                          onClick={() => handleCancelExpired(item.batchId)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Xuất hủy
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-        <CardFooter className="flex justify-between items-center border-t px-6 py-4">
-          <div className="text-sm text-muted-foreground">
-            Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-            {Math.min(currentPage * itemsPerPage, inventoryItems.length)} /{" "}
-            {inventoryItems.length} sản phẩm
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  className={
-                    currentPage === 1
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-
-              {currentPage > 3 && (
-                <>
+              <Pagination>
+                <PaginationContent>
                   <PaginationItem>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(1)}
-                      className="cursor-pointer"
-                    >
-                      1
-                    </PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <span>...</span>
-                  </PaginationItem>
-                </>
-              )}
-
-              {Array.from(
-                { length: Math.ceil(inventoryItems.length / itemsPerPage) },
-                (_, i) => i + 1
-              )
-                .slice(
-                  Math.max(0, currentPage - 3),
-                  Math.min(
-                    Math.ceil(inventoryItems.length / itemsPerPage),
-                    currentPage + 2
-                  )
-                )
-                .map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(page)}
-                      isActive={currentPage === page}
-                      className="cursor-pointer"
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-
-              {currentPage <
-                Math.ceil(inventoryItems.length / itemsPerPage) - 2 && (
-                <>
-                  <PaginationItem>
-                    <span>...</span>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink
+                    <PaginationPrevious
                       onClick={() =>
-                        setCurrentPage(
-                          Math.ceil(inventoryItems.length / itemsPerPage)
-                        )
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
-                      className="cursor-pointer"
-                    >
-                      {Math.ceil(inventoryItems.length / itemsPerPage)}
-                    </PaginationLink>
+                      className={
+                        currentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
                   </PaginationItem>
-                </>
-              )}
 
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    setCurrentPage((prev) =>
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    { length: Math.ceil(inventoryItems.length / itemsPerPage) },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, currentPage - 3),
                       Math.min(
-                        prev + 1,
-                        Math.ceil(inventoryItems.length / itemsPerPage)
+                        Math.ceil(inventoryItems.length / itemsPerPage),
+                        currentPage + 2
                       )
                     )
-                  }
-                  className={
-                    currentPage ===
-                    Math.ceil(inventoryItems.length / itemsPerPage)
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </CardFooter>
-      </Card>
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {currentPage <
+                    Math.ceil(inventoryItems.length / itemsPerPage) - 2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.ceil(inventoryItems.length / itemsPerPage)
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(inventoryItems.length / itemsPerPage)}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(inventoryItems.length / itemsPerPage)
+                          )
+                        )
+                      }
+                      className={
+                        currentPage ===
+                        Math.ceil(inventoryItems.length / itemsPerPage)
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="damaged">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center flex-col sm:flex-row gap-3">
+                <div>
+                  <CardTitle>Danh sách xuất hủy</CardTitle>
+                  <CardDescription>
+                    Hiển thị{" "}
+                    {(damagedStockCurrentPage - 1) * damagedStockItemsPerPage +
+                      1}{" "}
+                    -{" "}
+                    {Math.min(
+                      damagedStockCurrentPage * damagedStockItemsPerPage,
+                      damagedStocks.length
+                    )}{" "}
+                    / {damagedStocks.length} phiếu xuất hủy
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="relative w-[250px]">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Tìm theo tên sản phẩm, mã lô..."
+                      className="pl-8"
+                      value={damagedStockSearchTerm}
+                      onChange={(e) =>
+                        setDamagedStockSearchTerm(e.target.value)
+                      }
+                    />
+                  </div>
+                  <Select
+                    value={damagedStockStatusFilter}
+                    onValueChange={setDamagedStockStatusFilter}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                      <SelectItem value="exportcancel">Hàng hủy</SelectItem>
+                      <SelectItem value="return">Hàng trả</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={damagedStockItemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setDamagedStockItemsPerPage(Number.parseInt(value));
+                      setDamagedStockCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên sản phẩm</TableHead>
+                    <TableHead>Số lượng</TableHead>
+                    <TableHead>Lý do</TableHead>
+                    <TableHead>Ngày tạo</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isDamagedStockLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center h-24">
+                        <div className="flex justify-center items-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                          <span className="ml-3">Đang tải...</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredDamagedStocks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center h-24">
+                        Không tìm thấy phiếu xuất hủy nào
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredDamagedStocks.map((item, index) => (
+                      <TableRow key={`damaged-${item.damagedStockId}-${index}`}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>{item.quantity.toLocaleString()}</TableCell>
+                        <TableCell>{item.reason}</TableCell>
+                        <TableCell>{formatDate(item.createdAt)}</TableCell>
+                        <TableCell>
+                          {getDamagedStockStatusBadge(item.status)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter className="flex justify-between items-center border-t px-6 py-4">
+              <div className="text-sm text-muted-foreground">
+                Hiển thị{" "}
+                {(damagedStockCurrentPage - 1) * damagedStockItemsPerPage + 1} -{" "}
+                {Math.min(
+                  damagedStockCurrentPage * damagedStockItemsPerPage,
+                  damagedStocks.length
+                )}{" "}
+                / {damagedStocks.length} phiếu xuất hủy
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setDamagedStockCurrentPage((prev) =>
+                          Math.max(prev - 1, 1)
+                        )
+                      }
+                      className={
+                        damagedStockCurrentPage === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {damagedStockCurrentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setDamagedStockCurrentPage(1)}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  {Array.from(
+                    {
+                      length: Math.ceil(
+                        damagedStocks.length / damagedStockItemsPerPage
+                      ),
+                    },
+                    (_, i) => i + 1
+                  )
+                    .slice(
+                      Math.max(0, damagedStockCurrentPage - 3),
+                      Math.min(
+                        Math.ceil(
+                          damagedStocks.length / damagedStockItemsPerPage
+                        ),
+                        damagedStockCurrentPage + 2
+                      )
+                    )
+                    .map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setDamagedStockCurrentPage(page)}
+                          isActive={damagedStockCurrentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                  {damagedStockCurrentPage <
+                    Math.ceil(damagedStocks.length / damagedStockItemsPerPage) -
+                      2 && (
+                    <>
+                      <PaginationItem>
+                        <span>...</span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() =>
+                            setDamagedStockCurrentPage(
+                              Math.ceil(
+                                damagedStocks.length / damagedStockItemsPerPage
+                              )
+                            )
+                          }
+                          className="cursor-pointer"
+                        >
+                          {Math.ceil(
+                            damagedStocks.length / damagedStockItemsPerPage
+                          )}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setDamagedStockCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(
+                              damagedStocks.length / damagedStockItemsPerPage
+                            )
+                          )
+                        )
+                      }
+                      className={
+                        damagedStockCurrentPage ===
+                        Math.ceil(
+                          damagedStocks.length / damagedStockItemsPerPage
+                        )
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog tính giá */}
       <Dialog open={isPricingDialogOpen} onOpenChange={setIsPricingDialogOpen}>
