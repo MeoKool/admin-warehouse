@@ -445,33 +445,41 @@ export function ImportForm({ onClose }: ImportFormProps) {
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateItem(
-                            index,
-                            "quantity",
-                            Number.parseInt(e.target.value) || 0
-                          )
-                        }
+                        // chuyển thành text để dễ xử lý leading-zero
+                        type="text"
+                        inputMode="numeric"
+                        pattern="\d*"
                         className="w-[80px]"
+                        value={String(item.quantity)} // hiển thị đúng số nguyên
+                        onChange={(e) => {
+                          // chỉ giữ lại ký tự số
+                          const digits = e.target.value.replace(/\D/g, "");
+                          // parseInt sẽ loại bỏ 0 đầu; NaN -> 0
+                          const parsed = parseInt(digits, 10) || 0;
+                          // đảm bảo tối thiểu là 1
+                          const value = Math.max(parsed, 1);
+                          updateItem(index, "quantity", value);
+                        }}
                       />
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
-                        min="0"
-                        value={item.unitCost}
+                        // đổi thành text + inputMode numeric để control chuỗi đầu vào
+                        type="text"
+                        inputMode="numeric"
+                        pattern="\d*"
+                        className="w-[100px]"
+                        value={String(item.unitCost)} // hiển thị trực tiếp số nguyên
                         onChange={(e) => {
-                          // Giới hạn giá trị tối đa để tránh tràn
-                          const value = Math.min(
-                            Number.parseInt(e.target.value) || 0,
-                            999999999
-                          );
+                          // chỉ lấy các ký tự số
+                          const digits = e.target.value.replace(/\D/g, "");
+                          // parseInt bỏ qua 0 đầu, NaN => 0
+                          const parsed = parseInt(digits, 10);
+                          const value = isNaN(parsed)
+                            ? 0
+                            : Math.min(parsed, 999_999_999); // giới hạn tối đa
                           updateItem(index, "unitCost", value);
                         }}
-                        className="w-[100px]"
                       />
                     </TableCell>
                     <TableCell>
