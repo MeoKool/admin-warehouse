@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
-  User,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -51,11 +50,11 @@ const menuItems = [
     path: "/warehouse/transfer-request",
     icon: <PackageSearch className="h-5 w-5" />,
   },
-  {
-    title: "Hồ sơ",
-    path: "/warehouse/profile",
-    icon: <User className="h-5 w-5" />,
-  },
+  // {
+  //   title: "Hồ sơ",
+  //   path: "/warehouse/profile",
+  //   icon: <User className="h-5 w-5" />,
+  // },
 ];
 
 interface WarehouseSidebarProps {

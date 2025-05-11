@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import {
   Users,
   CheckSquare,
-  User,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -27,11 +26,11 @@ const menuItems = [
     path: "/admin/approve",
     icon: <CheckSquare className="h-5 w-5" />,
   },
-  {
-    title: "Trang cá nhân",
-    path: "/admin/profile",
-    icon: <User className="h-5 w-5" />,
-  },
+  // {
+  //   title: "Trang cá nhân",
+  //   path: "/admin/profile",
+  //   icon: <User className="h-5 w-5" />,
+  // },
 ];
 
 export function Sidebar() {

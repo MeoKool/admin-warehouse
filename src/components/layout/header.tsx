@@ -417,7 +417,14 @@ export function Header({ onMenuClick }: HeaderProps) {
                     <div className="py-1">
                       <DropdownMenu.Item
                         className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100"
-                        onSelect={() => console.log("Profile clicked")}
+                        onSelect={() => {
+                          const role = sessionStorage.getItem("Role"); // hoặc từ context nếu bạn lưu role ở context
+                          if (role === "1") {
+                            navigate("/admin/profile");
+                          } else if (role === "3") {
+                            navigate("/warehouse/profile");
+                          }
+                        }}
                       >
                         <User className="mr-2 h-4 w-4" />
                         <span>Hồ sơ</span>
