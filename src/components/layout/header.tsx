@@ -101,7 +101,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         if (userId) {
           const response = await axios.get(
-            `https://minhlong.mlhr.org/api/user/${userId}`
+            `https://minhlong.mlhr.org/api/get-info-user/${userId}`
           );
           setUserData(response.data);
         }
