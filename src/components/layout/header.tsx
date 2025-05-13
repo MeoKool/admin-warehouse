@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Avatar from "@radix-ui/react-avatar";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { LogOut, Menu, Settings, User, Loader2, Bell } from "lucide-react";
+import { LogOut, Menu, User, Loader2, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
