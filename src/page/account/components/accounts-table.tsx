@@ -150,7 +150,7 @@ export function AccountsTable({
                     Kích hoạt
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                  <span className="inline-flex items-center rounded-full bg-red-200 px-2 py-1 text-xs font-medium text-red-700">
                     Vô hiệu hóa
                   </span>
                 )}
