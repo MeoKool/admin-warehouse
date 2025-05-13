@@ -429,14 +429,6 @@ export function Header({ onMenuClick }: HeaderProps) {
                         <User className="mr-2 h-4 w-4" />
                         <span>Hồ sơ</span>
                       </DropdownMenu.Item>
-
-                      <DropdownMenu.Item
-                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100"
-                        onSelect={() => console.log("Settings clicked")}
-                      >
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Cài đặt</span>
-                      </DropdownMenu.Item>
                     </div>
 
                     <DropdownMenu.Separator className="my-1 h-px bg-gray-200" />
