@@ -223,7 +223,9 @@ export function OutgoingTransferDetailsDialog({
                       </div>
                       <div>
                         Số lượng:{" "}
-                        <Badge variant="outline">{product.quantity}</Badge>
+                        <Badge className="text-base" variant="outline">
+                          {product.quantity}
+                        </Badge>
                       </div>
                     </div>
                   </CardHeader>
