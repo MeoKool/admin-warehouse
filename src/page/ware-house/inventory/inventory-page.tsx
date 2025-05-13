@@ -31,7 +31,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -1025,62 +1024,101 @@ export default function InventoryPage() {
 
       {/* Dialog tính giá */}
       <Dialog open={isPricingDialogOpen} onOpenChange={setIsPricingDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Tính giá sản phẩm</DialogTitle>
-            <DialogDescription>
-              Nhập tỷ lệ lợi nhuận (%) cho sản phẩm {selectedBatch?.productName}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="productName" className="text-right">
+        <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden rounded-lg">
+          <div className="bg-emerald-500 p-5">
+            <DialogHeader className="text-white p-0 space-y-1">
+              <DialogTitle className="text-xl font-bold">
+                Tính giá sản phẩm
+              </DialogTitle>
+              <DialogDescription className="text-white/90">
+                Nhập tỷ lệ lợi nhuận (%) cho sản phẩm{" "}
+                {selectedBatch?.productName}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="flex items-center">
+              <div className="w-[120px] text-right text-gray-500 pr-4">
                 Sản phẩm
-              </Label>
-              <div className="col-span-3 font-medium">
+              </div>
+              <div className="flex-1 font-medium">
                 {selectedBatch?.productName}
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="batchCode" className="text-right">
+
+            <div className="flex items-center">
+              <div className="w-[120px] text-right text-gray-500 pr-4">
                 Mã lô
-              </Label>
-              <div className="col-span-3">{selectedBatch?.batchCode}</div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="unitCost" className="text-right">
-                Giá nhập
-              </Label>
-              <div className="col-span-3">
-                {selectedBatch?.unitCost?.toLocaleString("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }) || "N/A"}
+              </div>
+              <div className="flex-1 bg-gray-50 p-2 rounded">
+                {selectedBatch?.batchCode}
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profitMargin" className="text-right">
+
+            <div className="flex items-center">
+              <div className="w-[120px] text-right text-gray-500 pr-4">
+                Giá nhập
+              </div>
+              <div className="flex-1 font-medium">
+                {selectedBatch?.unitCost
+                  ?.toLocaleString("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  })
+                  .replace("₫", "đ") || "N/A"}
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              <Label
+                htmlFor="profitMargin"
+                className="w-[120px] text-right text-gray-500 pr-4"
+              >
                 Tỷ lệ lợi nhuận (%)
               </Label>
-              <Input
-                id="profitMargin"
-                type="number"
-                min="1"
-                max="100"
-                className="col-span-3"
-                value={profitMargin}
-                onChange={(e) => setProfitMargin(e.target.value)}
-              />
+              <div className="flex-1">
+                <Input
+                  id="profitMargin"
+                  type="number"
+                  min="1"
+                  max="100"
+                  className="w-full"
+                  value={profitMargin}
+                  onChange={(e) => setProfitMargin(e.target.value)}
+                />
+              </div>
             </div>
+
+            {/* Hiển thị giá bán dự kiến */}
+            {profitMargin && selectedBatch?.unitCost && (
+              <div className="flex items-center bg-emerald-50 p-3 rounded-md">
+                <div className="w-[120px] text-right text-gray-500 pr-4">
+                  Giá bán dự kiến
+                </div>
+                <div className="flex-1 font-bold text-emerald-700">
+                  {(selectedBatch.unitCost * (1 + Number(profitMargin) / 100))
+                    .toLocaleString("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    })
+                    .replace("₫", "đ")}
+                </div>
+              </div>
+            )}
           </div>
-          <DialogFooter>
+          <div className="flex justify-end gap-2 p-4 border-t border-gray-100">
             <Button
               variant="outline"
               onClick={() => setIsPricingDialogOpen(false)}
+              className="px-6"
             >
               Hủy
             </Button>
-            <Button onClick={handleUpdateProfitMargin} disabled={isSubmitting}>
+            <Button
+              onClick={handleUpdateProfitMargin}
+              disabled={isSubmitting}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-6"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1093,7 +1131,7 @@ export default function InventoryPage() {
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
