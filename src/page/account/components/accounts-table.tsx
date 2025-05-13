@@ -2,7 +2,7 @@ import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, MoreHorizontal, CheckCircle, XCircle } from "lucide-react";
+import { Edit, MoreHorizontal, CheckCircle, XCircle, Eye } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Account } from "../services/account-services";
+import { AccountDetailsDialog } from "./account-details-dialog";
 
 // Custom dropdown menu components
 interface CustomDropdownProps {
@@ -94,12 +95,19 @@ export function AccountsTable({
   onEdit,
 }: AccountsTableProps) {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
+  const [viewingAccount, setViewingAccount] = useState<Account | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const confirmDelete = () => {
     if (accountToDelete) {
       onDelete(accountToDelete.userId);
       setAccountToDelete(null);
     }
+  };
+
+  const handleViewDetails = (account: Account) => {
+    setViewingAccount(account);
+    setIsDetailsDialogOpen(true);
   };
 
   return (
@@ -155,7 +163,16 @@ export function AccountsTable({
                   </span>
                 )}
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => handleViewDetails(account)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Chi tiết
+                </Button>
                 <CustomDropdown
                   trigger={
                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -233,6 +250,12 @@ export function AccountsTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AccountDetailsDialog
+        account={viewingAccount}
+        open={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
+      />
     </div>
   );
 }
