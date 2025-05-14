@@ -135,10 +135,11 @@ export default function LoginPage() {
           sessionStorage.removeItem("Role");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
       toast.error(
-        "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
+        error.response?.data?.message ||
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
       );
     } finally {
       setIsLoading(false);
