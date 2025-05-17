@@ -241,7 +241,8 @@ export default function InventoryPage() {
         (statusFilter === "calculating" &&
           item.status === "CALCULATING_PRICE") ||
         (statusFilter === "active" && item.status === "ACTIVE") ||
-        (statusFilter === "expired" && item.status === "EXPIRED");
+        (statusFilter === "expired" && item.status === "EXPIRED") ||
+        (statusFilter === "expired_soon" && item.status === "EXPIRED_SOON");
 
       return matchesSearch && matchesStatus;
     });
@@ -333,6 +334,15 @@ export default function InventoryPage() {
             className="bg-red-50 text-red-700 border-red-200"
           >
             Đã hủy
+          </Badge>
+        );
+      case "EXPIRED_SOON":
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-50 text-red-700 border-red-200"
+          >
+            Sắp hết hạn
           </Badge>
         );
       default:
@@ -432,9 +442,10 @@ export default function InventoryPage() {
   const handleCancelExpired = async (batchId: number) => {
     try {
       setIsLoading(true);
+      const reason = "Hàng hết hạn";
       const response = await axios.post(
         `https://minhlong.mlhr.org/api/batch/cancel-expired/${batchId}`,
-        {},
+        { reason },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -567,6 +578,7 @@ export default function InventoryPage() {
                       <SelectItem value="active">Đã duyệt</SelectItem>
                       <SelectItem value="calculating">Đang tính giá</SelectItem>
                       <SelectItem value="expired">Hết hạn</SelectItem>
+                      <SelectItem value="expired_soon">Sắp hết hạn</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select

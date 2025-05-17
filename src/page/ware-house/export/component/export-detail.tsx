@@ -358,7 +358,7 @@ export function ExportDetail({
         open={isApprovalDialogOpen}
         onOpenChange={setIsApprovalDialogOpen}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Duyệt đơn xuất kho</DialogTitle>
             <DialogDescription>
