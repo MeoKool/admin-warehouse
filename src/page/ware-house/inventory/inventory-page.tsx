@@ -102,8 +102,8 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId") || "8";
+  const token = localStorage.getItem("token");
+  const warehouseId = localStorage.getItem("warehouseId") || "8";
   const API_URL =
     import.meta.env.VITE_API_URL || "http://localhost:localhost:3000";
 
@@ -125,6 +125,10 @@ export default function InventoryPage() {
   const [isDamagedStockLoading, setIsDamagedStockLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("inventory");
 
+  // Add these new state variables after the other state declarations
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [batchToCancel, setBatchToCancel] = useState<number | null>(null);
   // Fetch inventory data
   const fetchInventory = async () => {
     setIsLoading(true);
@@ -439,12 +443,23 @@ export default function InventoryPage() {
     }
   };
 
-  const handleCancelExpired = async (batchId: number) => {
+  const handleCancelExpired = (batchId: number) => {
+    setBatchToCancel(batchId);
+    setCancelReason("");
+    setIsCancelDialogOpen(true);
+  };
+
+  // Add this new function after handleCancelExpired
+  const confirmCancelExpired = async () => {
+    if (!batchToCancel) return;
+
     try {
       setIsLoading(true);
-      const reason = "Hàng hết hạn";
+      // Use the entered reason or default if empty
+      const reason = cancelReason.trim() || "Hàng hết hạn";
+
       const response = await axios.post(
-        `https://minhlong.mlhr.org/api/batch/cancel-expired/${batchId}`,
+        `https://minhlong.mlhr.org/api/batch/cancel-expired/${batchToCancel}`,
         { reason },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -453,6 +468,7 @@ export default function InventoryPage() {
 
       if (response.status === 200 || response.status === 204) {
         toast.success("Đã hủy lô hàng hết hạn thành công");
+        setIsCancelDialogOpen(false);
         fetchInventory();
       } else {
         throw new Error("Không thể hủy lô hàng");
@@ -1140,6 +1156,63 @@ export default function InventoryPage() {
                 <>
                   <Calculator className="h-4 w-4 mr-2" />
                   Xác nhận
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog xác nhận hủy lô hàng */}
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden rounded-lg">
+          <div className="bg-red-500 p-5">
+            <DialogHeader className="text-white p-0 space-y-1">
+              <DialogTitle className="text-xl font-bold">
+                Xác nhận xuất hủy
+              </DialogTitle>
+              <DialogDescription className="text-white/90">
+                Vui lòng nhập lý do xuất hủy lô hàng này
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancelReason">Lý do xuất hủy</Label>
+              <Input
+                id="cancelReason"
+                placeholder="Nhập lý do xuất hủy..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Nếu không nhập lý do, hệ thống sẽ sử dụng lý do mặc định "Hàng
+                hết hạn"
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 p-4 border-t border-gray-100">
+            <Button
+              variant="outline"
+              onClick={() => setIsCancelDialogOpen(false)}
+              className="px-6"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={confirmCancelExpired}
+              disabled={isLoading}
+              className="bg-red-500 hover:bg-red-600 text-white px-6"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Xác nhận xuất hủy
                 </>
               )}
             </Button>

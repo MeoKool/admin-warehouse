@@ -130,7 +130,7 @@ export function ExportReceiptsList() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
 
-  const token = sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL;
 
   // ------------------

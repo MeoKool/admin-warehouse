@@ -66,7 +66,7 @@ export function ImportDetail({ importData }: ImportDetailProps) {
   const [productDetails, setProductDetails] = useState<
     Map<number, ProductDetail>
   >(new Map());
-  const token = sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // Fetch import details

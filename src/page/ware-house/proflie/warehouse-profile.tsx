@@ -75,7 +75,7 @@ export default function WarehouseProfile() {
     const fetchUserProfile = async () => {
       setLoading(true);
       try {
-        const token = sessionStorage.getItem("token");
+        const token = localStorage.getItem("token");
         if (!token) {
           toast.error("Bạn chưa đăng nhập");
           return;
@@ -291,7 +291,7 @@ export default function WarehouseProfile() {
     setUpdating(true);
 
     try {
-      const token = sessionStorage.getItem("token");
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Bạn chưa đăng nhập");
         return;
@@ -326,7 +326,7 @@ export default function WarehouseProfile() {
 
     setUpdating(true);
     try {
-      const token = sessionStorage.getItem("token");
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Bạn chưa đăng nhập");
         return;

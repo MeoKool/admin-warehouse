@@ -88,10 +88,10 @@ export default function ExportApprovalPage() {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
 
-  const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId") || "3";
+  const token = localStorage.getItem("token");
+  const warehouseId = localStorage.getItem("warehouseId") || "3";
   const userId =
-    sessionStorage.getItem("userId") || "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+    localStorage.getItem("userId") || "3fa85f64-5717-4562-b3fc-2c963f66afa6";
   const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   // Fetch export requests

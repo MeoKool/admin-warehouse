@@ -187,7 +187,7 @@ export default function ImportPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const token = sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // Check if screen is mobile

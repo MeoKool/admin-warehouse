@@ -46,8 +46,8 @@ export function ExportRequestDetailDialog({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId") || "1";
+  const token = localStorage.getItem("token");
+  const warehouseId = localStorage.getItem("warehouseId") || "1";
   const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   // Fetch export request detail

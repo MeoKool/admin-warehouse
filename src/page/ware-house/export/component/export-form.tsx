@@ -119,8 +119,8 @@ export function ExportForm({ onClose }: ExportFormProps) {
   >(null);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
 
-  const token = sessionStorage.getItem("token");
-  const warehouseId = sessionStorage.getItem("warehouseId") || "8";
+  const token = localStorage.getItem("token");
+  const warehouseId = localStorage.getItem("warehouseId") || "8";
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // Fetch inventory và request export khi component mount

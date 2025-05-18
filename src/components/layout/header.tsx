@@ -96,8 +96,8 @@ export function Header({ onMenuClick }: HeaderProps) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Lấy userId từ sessionStorage
-        const userId = sessionStorage.getItem("userId");
+        // Lấy userId từ localStorage
+        const userId = localStorage.getItem("userId");
 
         if (userId) {
           const response = await axios.get(
@@ -123,7 +123,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   // Hàm lấy thông báo từ API
   const fetchNotifications = async () => {
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     try {
       setNotificationsLoading(true);
       const response = await axios.get(
@@ -151,7 +151,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         null,
         {
           headers: {
-            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -175,7 +175,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      sessionStorage.clear();
+      localStorage.clear();
       toast.success("Đăng xuất thành công");
       navigate("/login");
     } catch (error) {
@@ -418,7 +418,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                       <DropdownMenu.Item
                         className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100"
                         onSelect={() => {
-                          const role = sessionStorage.getItem("Role"); // hoặc từ context nếu bạn lưu role ở context
+                          const role = localStorage.getItem("Role"); // hoặc từ context nếu bạn lưu role ở context
                           if (role === "1") {
                             navigate("/admin/profile");
                           } else if (role === "3") {

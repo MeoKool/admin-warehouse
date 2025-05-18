@@ -14,7 +14,7 @@ export function SignalRListener() {
 
   const handleAccountDeactivated = () => {
     // Clear session storage first
-    sessionStorage.clear();
+    localStorage.clear();
     // Set modal to false to close it
     setShowDeactivatedModal(false);
     // Then navigate to login

@@ -113,7 +113,7 @@ export function OutgoingTransferDetailsDialog({
 }: OutgoingTransferDetailsDialogProps) {
   const [isImporting, setIsImporting] = useState(false);
 
-  const token = sessionStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const API_URL = import.meta.env.VITE_API_URL || "https://minhlong.mlhr.org";
 
   const handleImportTransfer = async () => {
