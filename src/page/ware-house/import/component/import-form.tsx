@@ -294,7 +294,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
     try {
       // Prepare data for API
       const importData = {
-        documentNumber: formData.documentNumber,
+        dateImport: formData.importDate,
         warehouseId: Number.parseInt(formData.warehouseId),
         importType: formData.importType,
         supplier: formData.supplier,
@@ -358,6 +358,7 @@ export function ImportForm({ onClose }: ImportFormProps) {
             id="importDate"
             name="importDate"
             type="date"
+            max={new Date().toISOString().split("T")[0]}
             value={formData.importDate}
             onChange={handleInputChange}
             required

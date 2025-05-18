@@ -414,7 +414,7 @@ export default function ImportPage() {
                               {imp.documentNumber}
                             </TableCell>
                             <TableCell>
-                              {new Date(imp.documentDate).toLocaleDateString()}
+                              {new Date(imp.dateImport).toLocaleDateString()}
                             </TableCell>
                             <TableCell>{imp.supplier}</TableCell>
                             <TableCell>{imp.warehouseName}</TableCell>
