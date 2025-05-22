@@ -29,6 +29,7 @@ import SignalRListener from "./components/signalr/SignalRListener";
 import PaymentHistoryPage from "./page/accountant/payment-history";
 import { AccountantLayout } from "./components/layout/accountant-layout";
 import WarehouseTransfersPage from "./page/ware-house/tranfers/page";
+import BunkerPage from "./page/ware-house/inventory/bunker-page";
 
 // Định nghĩa ProtectedLoginRoute trong cùng file hoặc import từ file riêng
 const ProtectedLoginRoute = () => {
@@ -97,6 +98,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="import" element={<ImportPage />} />
             <Route path="profile" element={<WarehouseProfile />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="bunker" element={<BunkerPage />} />
             <Route path="export/approval" element={<ExportApprovalPage />} />
             <Route path="view-export" element={<ViewExportPage />} />
             <Route

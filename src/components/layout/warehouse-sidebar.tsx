@@ -11,6 +11,7 @@ import {
   PackagePlus,
   Eye,
   PackageSearch,
+  Import,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,13 @@ const menuItems = [
   },
   {
     title: "Kho hàng",
-    path: "/warehouse/inventory",
+    path: "/warehouse/bunker",
     icon: <Warehouse className="h-5 w-5" />,
+  },
+  {
+    title: "Quản lí nhập hàng",
+    path: "/warehouse/inventory",
+    icon: <Import className="h-5 w-5" />,
   },
   {
     title: "Nhập sản phẩm",
