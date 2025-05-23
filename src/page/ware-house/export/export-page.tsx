@@ -79,6 +79,7 @@ interface ExportReceipt {
   agencyName: string;
   details: ExportReceiptDetail[];
   exportWarehouseReceiptId: number;
+  warehouseName: string;
 }
 
 interface ExportReceiptDetail {

@@ -46,6 +46,7 @@ interface ExportReceiptDetail {
   totalProductAmount: number;
   expiryDate: string;
   exportWarehouseReceiptId?: number; // Make it optional to be more flexible
+  warehouseName?: string; // Optional property for warehouse name
 }
 
 // Interface cho props của component
@@ -64,6 +65,7 @@ interface ExportDetailProps {
     agencyName: string;
     details: ExportReceiptDetail[];
     exportWarehouseReceiptId: number;
+    warehouseName: string;
   };
   onApproved?: () => void;
 }
@@ -241,7 +243,7 @@ export function ExportDetail({
 
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Kho xuất:</div>
-                <div className="text-sm">Kho {exportData.warehouseId}</div>
+                <div className="text-sm">{exportData.warehouseName}</div>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Trạng thái:</div>

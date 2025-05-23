@@ -110,6 +110,7 @@ export interface ExportWarehouseReceipt {
   orderCode: string;
   agencyName: string;
   details: ProductDetail[];
+  warehouseName: string;
 }
 
 // Return Request Types
