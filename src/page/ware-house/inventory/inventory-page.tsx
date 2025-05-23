@@ -699,6 +699,11 @@ export default function InventoryPage() {
                               Xuất hủy
                             </Button>
                           )}
+                          {item.status === "ACTIVE" && (
+                            <Badge className="bg-orange-50 text-orange-700 border-orange-200">
+                              Đã tính giá
+                            </Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
