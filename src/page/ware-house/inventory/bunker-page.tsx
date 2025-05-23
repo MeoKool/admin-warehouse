@@ -39,10 +39,11 @@ export default function BunkerPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
+      const id = localStorage.getItem("warehouseId");
       const token = localStorage.getItem("token");
       try {
         const response = await fetch(
-          "https://minhlong.mlhr.org/api/3/summary",
+          `https://minhlong.mlhr.org/api/${id}/summary`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -139,7 +140,7 @@ export default function BunkerPage() {
         <p className="text-muted-foreground">Quản lý sản phẩm trong kho</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tổng sản phẩm</CardTitle>
@@ -169,19 +170,6 @@ export default function BunkerPage() {
                 100
               ).toFixed(0)}
               % sản phẩm
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sắp hết hàng</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{lowStockCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Sản phẩm có số lượng dưới 20
             </p>
           </CardContent>
         </Card>
