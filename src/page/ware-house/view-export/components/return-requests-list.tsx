@@ -563,7 +563,7 @@ export function ReturnRequestsList({
 
       {selectedRequest && (
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="sm:max-w-[800px]">
+          <DialogContent className="sm:max-w-[1200px]">
             <DialogHeader>
               <DialogTitle>Chi tiết phiếu trả hàng</DialogTitle>
             </DialogHeader>
