@@ -131,11 +131,8 @@ export default function BunkerPage() {
   ).length;
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Kho hàng</h2>
-        <p className="text-muted-foreground">Quản lý sản phẩm trong kho</p>
-      </div>
+    <div className="space-y-6">
+      <div></div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
