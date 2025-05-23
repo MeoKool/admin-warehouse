@@ -129,9 +129,6 @@ export default function BunkerPage() {
   const outOfStockCount = products.filter(
     (product) => product.totalQuantity === 0
   ).length;
-  const lowStockCount = products.filter(
-    (product) => product.totalQuantity > 0 && product.totalQuantity < 20
-  ).length;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
