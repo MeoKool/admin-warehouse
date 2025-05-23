@@ -188,6 +188,18 @@ export function ExportDetail({
   // Kiểm tra xem đơn có thể duyệt không
   const canApprove = exportData.status.toLowerCase() === "pending";
 
+  const getImportTypeDisplay = (importType: string) => {
+    switch (importType) {
+      case "ExportCoordination":
+        return "Xuất điều phối";
+      case "ExportSale":
+        return "Xuất bán hàng";
+      case "PendingTransfer":
+        return "Chờ điều phối";
+      default:
+        return importType;
+    }
+  };
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
@@ -218,16 +230,15 @@ export function ExportDetail({
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Loại xuất:</div>
-                <div className="text-sm">{exportData.exportType}</div>
+                <div className="text-sm">
+                  {getImportTypeDisplay(exportData.exportType)}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Mã đơn hàng:</div>
                 <div className="text-sm">{exportData.orderCode}</div>
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div className="text-sm font-medium">Mã yêu cầu xuất:</div>
-                <div className="text-sm">{exportData.requestExportId}</div>
-              </div>
+
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Kho xuất:</div>
                 <div className="text-sm">Kho {exportData.warehouseId}</div>

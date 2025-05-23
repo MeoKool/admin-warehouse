@@ -172,7 +172,8 @@ export function TransferDetailsDialog({
         <DialogHeader>
           <DialogTitle>Chi tiết yêu cầu chuyển kho</DialogTitle>
           <DialogDescription>
-            Thông tin chi tiết yêu cầu chuyển kho #{transfer.id}
+            Thông tin chi tiết yêu cầu chuyển kho #
+            {transfer.warehouseTranferCode}
           </DialogDescription>
         </DialogHeader>
 
@@ -186,7 +187,7 @@ export function TransferDetailsDialog({
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Mã yêu cầu:</p>
-                <p className="font-medium">{transfer.id}</p>
+                <p className="font-medium">{transfer.warehouseTranferCode}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Mã đơn xuất:</p>

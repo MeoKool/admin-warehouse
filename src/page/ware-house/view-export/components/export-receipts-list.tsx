@@ -23,7 +23,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -635,10 +634,6 @@ export function ExportReceiptsList() {
           <DialogContent className="sm:max-w-[1000px]">
             <DialogHeader>
               <DialogTitle>Chi tiết phiếu xuất kho</DialogTitle>
-              <DialogDescription>
-                Thông tin chi tiết phiếu xuất kho #
-                {selectedReceipt.exportWarehouseReceiptId}
-              </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               {/* Import and use the ExportDetail component */}
