@@ -219,7 +219,6 @@ export default function BunkerPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">ID</TableHead>
                 <TableHead>Tên sản phẩm</TableHead>
                 <TableHead className="text-right">Số lượng</TableHead>
                 <TableHead className="text-center">Trạng thái</TableHead>
@@ -244,9 +243,6 @@ export default function BunkerPage() {
               ) : (
                 filteredProducts.map((product) => (
                   <TableRow key={product.productId}>
-                    <TableCell className="font-medium">
-                      {product.productId}
-                    </TableCell>
                     <TableCell>{product.productName}</TableCell>
                     <TableCell className="text-right">
                       {product.totalQuantity.toLocaleString()}
