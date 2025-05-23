@@ -120,6 +120,7 @@ export interface ReturnRequestDetail {
   reason: string;
   quantity: number;
   batchId: string;
+  batchCode: string;
 }
 
 // Interface for Return Warehouse Receipt Detail
@@ -129,6 +130,7 @@ export interface ReturnWarehouseReceiptDetail {
   quantity: number;
   batchId: number;
   reason: string;
+  batchCode: string;
 }
 
 // Interface for Return Warehouse Receipt

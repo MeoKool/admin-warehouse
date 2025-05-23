@@ -148,7 +148,7 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
                   </TableCell>
                   <TableCell>{detail.productName}</TableCell>
                   <TableCell>{detail.reason}</TableCell>
-                  <TableCell>{detail.batchId}</TableCell>
+                  <TableCell>{detail.batchCode}</TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center">
                       <Package className="h-4 w-4 mr-2 text-muted-foreground" />
