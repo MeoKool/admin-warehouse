@@ -46,7 +46,7 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
     } else if (statusLower === "pending") {
       return (
         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-          Chờ xử lý
+          Chờ xử lí
         </Badge>
       );
     } else if (statusLower === "imported") {

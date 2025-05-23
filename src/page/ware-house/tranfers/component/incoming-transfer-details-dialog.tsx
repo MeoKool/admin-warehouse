@@ -3,7 +3,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -117,7 +116,6 @@ export function IncomingTransferDetailsDialog({
     setIsApproving(true);
     try {
       await approveTransfer(transfer.id);
-      toast.success("Yêu cầu chuyển kho đã được phê duyệt thành công!");
       if (onApproved) {
         onApproved();
       }
@@ -135,10 +133,6 @@ export function IncomingTransferDetailsDialog({
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Chi tiết yêu cầu chuyển kho</DialogTitle>
-          <DialogDescription>
-            Thông tin chi tiết yêu cầu chuyển kho #
-            {transfer.warehouseTranferCode}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

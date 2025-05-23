@@ -60,7 +60,7 @@ export function OutgoingTransfers({
       color = "text-yellow-800";
       bgColor = "bg-yellow-100";
       hoverColor = "hover:bg-yellow-200";
-      label = "Chờ xử lý";
+      label = "Chờ xử lí";
     } else if (statusLower === "approved") {
       color = "text-blue-800";
       bgColor = "bg-blue-100";

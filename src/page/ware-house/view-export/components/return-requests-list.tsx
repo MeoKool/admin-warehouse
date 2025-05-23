@@ -155,7 +155,7 @@ export function ReturnRequestsList({
     } else if (statusLower === "pending") {
       return (
         <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-          Chờ xử lý
+          Chờ xử lí
         </Badge>
       );
     } else if (statusLower === "imported") {
@@ -315,7 +315,7 @@ export function ReturnRequestsList({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="pending">Chờ xử lý</SelectItem>
+              <SelectItem value="pending">Chờ xử lí</SelectItem>
               <SelectItem value="imported">Đã nhập kho</SelectItem>
             </SelectContent>
           </Select>

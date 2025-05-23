@@ -527,7 +527,7 @@ export default function InventoryPage() {
                     inventoryItems.filter((item) => item.status === "PENDING")
                       .length
                   }{" "}
-                  lô đang chờ xử lý
+                  lô đang Chờ xử lí
                 </p>
               </CardContent>
             </Card>
@@ -586,7 +586,7 @@ export default function InventoryPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                      <SelectItem value="pending">Chờ xử lý</SelectItem>
+                      <SelectItem value="pending">Chờ xử lí</SelectItem>
                       <SelectItem value="active">Đã duyệt</SelectItem>
                       <SelectItem value="calculating">Đang tính giá</SelectItem>
                       <SelectItem value="expired">Hết hạn</SelectItem>

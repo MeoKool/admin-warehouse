@@ -16,6 +16,7 @@ import {
 } from "@/lib/transfer-api";
 import { OutgoingTransfers } from "./component/outgoing-transfers";
 import { IncomingTransfers } from "./component/incoming-transfers";
+import { connection } from "@/lib/signalr-client";
 
 export default function WarehouseTransfersPage() {
   const [activeTab, setActiveTab] = useState("outgoing");
@@ -64,7 +65,19 @@ export default function WarehouseTransfersPage() {
       setIsLoading(false);
     }
   };
+  // Listen for SignalR notifications
+  useEffect(() => {
+    const handleNewOrder = () => {
+      if (warehouseId) {
+        loadTransferData(warehouseId); // Gọi lại để reload dữ liệu
+      }
+    };
 
+    connection.on("ReceiveNotification", handleNewOrder);
+    return () => {
+      connection.off("ReceiveNotification", handleNewOrder);
+    };
+  }, [warehouseId]); // Thêm warehouseId vào dependency để đảm bảo đúng ID
   const handleTransferApproved = () => {
     if (warehouseId) {
       loadTransferData(warehouseId);
