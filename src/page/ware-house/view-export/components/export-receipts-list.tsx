@@ -225,7 +225,7 @@ export function ExportReceiptsList() {
     if (statusLower === "completed") {
       return (
         <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-          Đã giao hàng
+          Đã xuất kho
         </Badge>
       );
     } else if (statusLower === "processing") {
