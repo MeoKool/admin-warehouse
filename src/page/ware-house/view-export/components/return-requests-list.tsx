@@ -22,7 +22,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -567,9 +566,6 @@ export function ReturnRequestsList({
           <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
               <DialogTitle>Chi tiết phiếu trả hàng</DialogTitle>
-              <DialogDescription>
-                Thông tin chi tiết phiếu trả hàng #{selectedRequest.receiptCode}
-              </DialogDescription>
             </DialogHeader>
 
             <ReturnRequestDetail request={selectedRequest} />

@@ -91,12 +91,7 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
                   {request.receiptCode}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div className="text-sm font-medium">ID phiếu:</div>
-                <div className="text-sm font-mono text-xs">
-                  {request.returnWarehouseReceiptId}
-                </div>
-              </div>
+
               <div className="grid grid-cols-2 gap-1">
                 <div className="text-sm font-medium">Ngày tạo:</div>
                 <div className="text-sm">{formatDate(request.receiptDate)}</div>
@@ -115,12 +110,6 @@ export function ReturnRequestDetail({ request }: ReturnRequestDetailProps) {
                 <div className="text-sm font-medium">Tổng số lượng:</div>
                 <div className="text-sm">
                   {getTotalQuantity().toLocaleString()}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div className="text-sm font-medium">Ghi chú:</div>
-                <div className="text-sm">
-                  {request.note || "Không có ghi chú"}
                 </div>
               </div>
             </div>
