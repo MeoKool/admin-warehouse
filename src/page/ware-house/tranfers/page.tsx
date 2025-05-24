@@ -35,7 +35,6 @@ export default function WarehouseTransfersPage() {
     if (storedWarehouseId) {
       setWarehouseId(Number.parseInt(storedWarehouseId, 10));
     } else {
-      // For demo purposes, default to warehouse ID 1 if not found
       setWarehouseId(1);
       console.warn(
         "warehouseId not found in localStorage, using default value 1"
@@ -77,14 +76,19 @@ export default function WarehouseTransfersPage() {
     return () => {
       connection.off("ReceiveNotification", handleNewOrder);
     };
-  }, [warehouseId]); // Thêm warehouseId vào dependency để đảm bảo đúng ID
+  }, [warehouseId]);
   const handleTransferApproved = () => {
     if (warehouseId) {
       loadTransferData(warehouseId);
     }
     toast.success("Đã phê duyệt yêu cầu chuyển kho thành công");
   };
-
+  const handleTransferImported = () => {
+    if (warehouseId) {
+      loadTransferData(warehouseId);
+    }
+    toast.success("Nhập điều phối thành công");
+  };
   return (
     <div className="space-y-6 px-2 sm:px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -132,6 +136,7 @@ export default function WarehouseTransfersPage() {
               <OutgoingTransfers
                 transfers={outgoingTransfers}
                 isLoading={isLoading}
+                onRefresh={handleTransferImported}
               />
             </TabsContent>
             <TabsContent value="incoming" className="mt-0">

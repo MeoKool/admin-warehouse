@@ -119,7 +119,7 @@ export function OutgoingTransferDetailsDialog({
     setIsImporting(true);
     try {
       const response = await axios.post(
-        `${API_URL}warehouse-receipts/import-transfer-approved/${transfer.destinationWarehouseId}`,
+        `${API_URL}warehouse-receipts/import-transfer-approved/${transfer.id}`,
         {},
         {
           headers: {
@@ -130,10 +130,10 @@ export function OutgoingTransferDetailsDialog({
       );
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("Nhập điều phối thành công");
         if (onImported) {
           onImported();
         }
+
         onOpenChange(false);
       } else {
         throw new Error("Không thể nhập điều phối");

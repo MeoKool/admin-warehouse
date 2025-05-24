@@ -133,7 +133,6 @@ export function TransferDetailsDialog({
       setIsApproving(false);
     }
   };
-
   const handleImportTransfer = async () => {
     setIsImporting(true);
     try {
@@ -149,7 +148,6 @@ export function TransferDetailsDialog({
       );
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("Nhập điều phối thành công");
         if (onApproved) {
           onApproved();
         }
