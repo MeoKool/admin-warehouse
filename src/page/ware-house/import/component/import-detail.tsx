@@ -57,6 +57,8 @@ interface ProductDetail {
   taxId: number;
   availableStock: number;
   images: string[];
+  discount: number;
+  finalPrice: number;
 }
 
 export function ImportDetail({ importData }: ImportDetailProps) {

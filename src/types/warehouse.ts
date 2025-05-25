@@ -94,6 +94,8 @@ export interface ProductDetail {
   unitPrice: number;
   totalProductAmount: number;
   expiryDate: string;
+  discount: number;
+  finalPrice: number;
 }
 
 export interface ExportWarehouseReceipt {
@@ -111,6 +113,8 @@ export interface ExportWarehouseReceipt {
   agencyName: string;
   details: ProductDetail[];
   warehouseName: string;
+  finalPrice: number;
+  discount: number;
 }
 
 // Return Request Types
