@@ -1,14 +1,6 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileOutput, ArchiveRestore } from "lucide-react";
 import { toast } from "sonner";
 import { ReturnRequestsList } from "./components/return-requests-list";
@@ -79,9 +71,6 @@ export default function ViewExportPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>Quản lý xuất kho</CardTitle>
-          <CardDescription>
-            Xem và quản lý phiếu xuất kho và phiếu trả hàng
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs

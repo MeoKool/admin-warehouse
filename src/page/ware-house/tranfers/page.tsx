@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import type { WarehouseTransfer } from "@/types/warehouse";
@@ -102,9 +96,6 @@ export default function WarehouseTransfersPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>Yêu cầu chuyển kho</CardTitle>
-          <CardDescription>
-            Xem và quản lý các yêu cầu chuyển kho đi và đến
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs
