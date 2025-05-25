@@ -28,15 +28,16 @@ const menuItems = [
     icon: <Warehouse className="h-5 w-5" />,
   },
   {
-    title: "Quản lí nhập hàng",
-    path: "/warehouse/inventory",
-    icon: <Import className="h-5 w-5" />,
-  },
-  {
     title: "Nhập sản phẩm",
     path: "/warehouse/import",
     icon: <PackagePlus className="h-5 w-5" />,
   },
+  {
+    title: "Quản lí nhập hàng",
+    path: "/warehouse/inventory",
+    icon: <Import className="h-5 w-5" />,
+  },
+
   {
     title: "Xem đơn xuất kho",
     path: "/warehouse/view-export/",
