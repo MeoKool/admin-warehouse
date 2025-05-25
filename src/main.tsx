@@ -30,6 +30,7 @@ import PaymentHistoryPage from "./page/accountant/payment-history";
 import { AccountantLayout } from "./components/layout/accountant-layout";
 import WarehouseTransfersPage from "./page/ware-house/tranfers/page";
 import BunkerPage from "./page/ware-house/inventory/bunker-page";
+import AdminDashBoard from "./page/account/dashboard-admin";
 
 // Định nghĩa ProtectedLoginRoute trong cùng file hoặc import từ file riêng
 const ProtectedLoginRoute = () => {
@@ -79,6 +80,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route element={<ProtectedRoute allowedRoles={[1]} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/accounts" replace />} />
+            <Route path="dashboard" element={<AdminDashBoard />} />
             <Route path="accounts" element={<AccountsPage />} />
             <Route path="approve" element={<ApprovePage />} />
             <Route path="profile" element={<ProfilePage />} />
