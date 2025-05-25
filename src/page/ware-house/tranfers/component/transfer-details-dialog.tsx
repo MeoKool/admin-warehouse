@@ -25,7 +25,7 @@ import axios from "axios";
 export const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
   try {
-    return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
+    return format(new Date(dateString), "dd/MM/yyyy", { locale: vi });
   } catch (error) {
     console.log("Error parsing date:", error);
     return dateString;
