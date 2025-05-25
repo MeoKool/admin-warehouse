@@ -45,8 +45,10 @@ interface ExportReceiptDetail {
   unitPrice: number;
   totalProductAmount: number;
   expiryDate: string;
-  exportWarehouseReceiptId?: number; // Make it optional to be more flexible
-  warehouseName?: string; // Optional property for warehouse name
+  exportWarehouseReceiptId?: number;
+  warehouseName?: string;
+  discount: number;
+  finalPrice: number;
 }
 
 // Interface cho props của component
@@ -66,6 +68,8 @@ interface ExportDetailProps {
     details: ExportReceiptDetail[];
     exportWarehouseReceiptId: number;
     warehouseName: string;
+    discount: number;
+    finalPrice: number;
   };
   onApproved?: () => void;
 }
@@ -317,12 +321,38 @@ export function ExportDetail({
                 ))}
                 <TableRow>
                   <TableCell colSpan={6} className="text-right font-medium">
-                    Tổng giá trị:
+                    Tổng tiền:
                   </TableCell>
-                  <TableCell className="text-right font-bold">
+                  <TableCell
+                    className={`text-right font-bold ${
+                      exportData.discount > 0
+                        ? "line-through text-gray-500"
+                        : ""
+                    }`}
+                  >
                     {exportData.totalAmount.toLocaleString()} VNĐ
                   </TableCell>
                 </TableRow>
+                {exportData.discount > 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-right font-medium">
+                      Giảm giá:
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {exportData.discount}%
+                    </TableCell>
+                  </TableRow>
+                )}
+                {exportData.discount > 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-right font-medium">
+                      Tổng tiền sau giảm giá:
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {exportData.finalPrice.toLocaleString()} VNĐ
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
