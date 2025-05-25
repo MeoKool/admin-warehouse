@@ -122,10 +122,7 @@ export default function BunkerPage() {
 
   // Calculate summary statistics
   const totalProducts = products.length;
-  const totalItems = products.reduce(
-    (sum, product) => sum + product.totalQuantity,
-    0
-  );
+
   const outOfStockCount = products.filter(
     (product) => product.totalQuantity === 0
   ).length;
@@ -142,9 +139,6 @@ export default function BunkerPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalItems.toLocaleString()} đơn vị
-            </p>
           </CardContent>
         </Card>
 
@@ -157,14 +151,6 @@ export default function BunkerPage() {
             <div className="text-2xl font-bold">
               {products.filter((p) => p.totalQuantity > 0).length}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {(
-                (products.filter((p) => p.totalQuantity > 0).length /
-                  totalProducts) *
-                100
-              ).toFixed(0)}
-              % sản phẩm
-            </p>
           </CardContent>
         </Card>
 
@@ -175,9 +161,6 @@ export default function BunkerPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{outOfStockCount}</div>
-            <p className="text-xs text-muted-foreground">
-              {((outOfStockCount / totalProducts) * 100).toFixed(0)}% sản phẩm
-            </p>
           </CardContent>
         </Card>
       </div>

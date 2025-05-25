@@ -502,12 +502,6 @@ export default function InventoryPage() {
                 <div className="text-2xl font-bold">
                   {productSummaries.length}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {productSummaries
-                    .reduce((sum, product) => sum + product.totalQuantity, 0)
-                    .toLocaleString()}{" "}
-                  đơn vị
-                </p>
               </CardContent>
             </Card>
 
@@ -522,13 +516,6 @@ export default function InventoryPage() {
                 <div className="text-2xl font-bold">
                   {inventoryItems.length}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {
-                    inventoryItems.filter((item) => item.status === "PENDING")
-                      .length
-                  }{" "}
-                  lô đang Chờ xử lí
-                </p>
               </CardContent>
             </Card>
 
