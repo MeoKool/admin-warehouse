@@ -235,6 +235,8 @@ export function ImportDetail({ importData }: ImportDetailProps) {
         return "Nhập điều phối";
       case "ImportProduction":
         return "Nhập hàng mới";
+      case "AvailableExport":
+        return "Sẵn hàng";
       default:
         return importType;
     }
