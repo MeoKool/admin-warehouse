@@ -7,12 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Package,
   PackageCheck,
   Truck,
-  AlertCircle,
   TrendingUp,
-  TrendingDown,
+  DollarSign,
+  ShoppingCart,
 } from "lucide-react";
 import {
   LineChart,
@@ -25,34 +24,54 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
-interface ExportedOrderData {
+interface ApiResponse<T> {
+  success: boolean;
+  data: T[];
+}
+
+interface ReceiptStats {
+  month: number;
+  totalReceipts: number;
+  totalImportValue: number;
+  totalQuantityImported: number;
+}
+
+interface ExportStats {
+  month: number;
+  totalExports: number;
+  totalExportValue: number;
+  totalQuantityExported: number;
+}
+
+interface OrderStats {
   month: number;
   exportedOrderCount: number;
-}
-
-interface ExportCountData {
-  month: number;
-  exportCount: number;
-}
-
-interface ReceiptCountData {
-  month: number;
-  receiptCount: number;
+  totalRevenue: number;
+  totalProductSold: number;
 }
 
 interface ChartData {
   month: string;
-  exportedOrders: number;
-  exports: number;
   receipts: number;
+  exports: number;
+  orders: number;
+  importValue: number;
+  exportValue: number;
+  revenue: number;
+  quantityImported: number;
+  quantityExported: number;
+  productsSold: number;
 }
 
-export default function AdminDashBoard() {
-  const [exportedOrders, setExportedOrders] = useState<ExportedOrderData[]>([]);
-  const [exportCounts, setExportCounts] = useState<ExportCountData[]>([]);
-  const [receiptCounts, setReceiptCounts] = useState<ReceiptCountData[]>([]);
+export default function WarehouseDashboard() {
+  const [receiptStats, setReceiptStats] = useState<ReceiptStats[]>([]);
+  const [exportStats, setExportStats] = useState<ExportStats[]>([]);
+  const [orderStats, setOrderStats] = useState<OrderStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,37 +82,35 @@ export default function AdminDashBoard() {
         setIsLoading(true);
         setError(null);
 
-        const [exportedOrdersRes, exportCountsRes, receiptCountsRes] =
-          await Promise.all([
-            fetch(
-              "https://minhlong.mlhr.org/api/orders/dashboard/exported-orders-by-month"
-            ),
-            fetch(
-              "https://minhlong.mlhr.org/api/WarehouseExport/dashboard/export-count-monthly-all"
-            ),
-            fetch(
-              "https://minhlong.mlhr.org/api/warehouse-receipts/dashboard/monthly-receipt-count/all"
-            ),
-          ]);
+        const [receiptRes, exportRes, orderRes] = await Promise.all([
+          fetch(
+            "https://minhlong.mlhr.org/api/warehouse-receipts/dashboard/monthly-receipt-stats"
+          ),
+          fetch(
+            "https://minhlong.mlhr.org/api/WarehouseExport/dashboard/monthly-export-stats"
+          ),
+          fetch(
+            "https://minhlong.mlhr.org/api/orders/dashboard/monthly-export-stats"
+          ),
+        ]);
 
-        if (
-          !exportedOrdersRes.ok ||
-          !exportCountsRes.ok ||
-          !receiptCountsRes.ok
-        ) {
+        if (!receiptRes.ok || !exportRes.ok || !orderRes.ok) {
           throw new Error("Failed to fetch data from one or more APIs");
         }
 
-        const [exportedOrdersData, exportCountsData, receiptCountsData] =
-          await Promise.all([
-            exportedOrdersRes.json(),
-            exportCountsRes.json(),
-            receiptCountsRes.json(),
-          ]);
+        const [receiptData, exportData, orderData] = await Promise.all([
+          receiptRes.json() as Promise<ApiResponse<ReceiptStats>>,
+          exportRes.json() as Promise<ApiResponse<ExportStats>>,
+          orderRes.json() as Promise<ApiResponse<OrderStats>>,
+        ]);
 
-        setExportedOrders(exportedOrdersData);
-        setExportCounts(exportCountsData);
-        setReceiptCounts(receiptCountsData);
+        if (!receiptData.success || !exportData.success || !orderData.success) {
+          throw new Error("API returned unsuccessful response");
+        }
+
+        setReceiptStats(receiptData.data);
+        setExportStats(exportData.data);
+        setOrderStats(orderData.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
         console.error("Error fetching data:", err);
@@ -124,79 +141,87 @@ export default function AdminDashBoard() {
     return monthNames[month - 1] || `Tháng ${month}`;
   };
 
+  // Format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
+
   // Prepare chart data
   const chartData: ChartData[] = [];
   const allMonths = new Set([
-    ...exportedOrders.map((item) => item.month),
-    ...exportCounts.map((item) => item.month),
-    ...receiptCounts.map((item) => item.month),
+    ...receiptStats.map((item) => item.month),
+    ...exportStats.map((item) => item.month),
+    ...orderStats.map((item) => item.month),
   ]);
 
   Array.from(allMonths)
     .sort((a, b) => a - b)
     .forEach((month) => {
-      const exportedOrder = exportedOrders.find((item) => item.month === month);
-      const exportCount = exportCounts.find((item) => item.month === month);
-      const receiptCount = receiptCounts.find((item) => item.month === month);
+      const receipt = receiptStats.find((item) => item.month === month);
+      const exportStat = exportStats.find((item) => item.month === month);
+      const order = orderStats.find((item) => item.month === month);
 
       chartData.push({
         month: getMonthName(month),
-        exportedOrders: exportedOrder?.exportedOrderCount || 0,
-        exports: exportCount?.exportCount || 0,
-        receipts: receiptCount?.receiptCount || 0,
+        receipts: receipt?.totalReceipts || 0,
+        exports: exportStat?.totalExports || 0,
+        orders: order?.exportedOrderCount || 0,
+        importValue: receipt?.totalImportValue || 0,
+        exportValue: exportStat?.totalExportValue || 0,
+        revenue: order?.totalRevenue || 0,
+        quantityImported: receipt?.totalQuantityImported || 0,
+        quantityExported: exportStat?.totalQuantityExported || 0,
+        productsSold: order?.totalProductSold || 0,
       });
     });
 
-  // Calculate totals and trends
-  const totalExportedOrders = exportedOrders.reduce(
+  // Calculate totals
+  const totalReceipts = receiptStats.reduce(
+    (sum, item) => sum + item.totalReceipts,
+    0
+  );
+  const totalExports = exportStats.reduce(
+    (sum, item) => sum + item.totalExports,
+    0
+  );
+  const totalOrders = orderStats.reduce(
     (sum, item) => sum + item.exportedOrderCount,
     0
   );
-  const totalExports = exportCounts.reduce(
-    (sum, item) => sum + item.exportCount,
+  const totalImportValue = receiptStats.reduce(
+    (sum, item) => sum + item.totalImportValue,
     0
   );
-  const totalReceipts = receiptCounts.reduce(
-    (sum, item) => sum + item.receiptCount,
+  const totalExportValue = exportStats.reduce(
+    (sum, item) => sum + item.totalExportValue,
+    0
+  );
+  const totalRevenue = orderStats.reduce(
+    (sum, item) => sum + item.totalRevenue,
+    0
+  );
+  const totalQuantityImported = receiptStats.reduce(
+    (sum, item) => sum + item.totalQuantityImported,
+    0
+  );
+  const totalQuantityExported = exportStats.reduce(
+    (sum, item) => sum + item.totalQuantityExported,
+    0
+  );
+  const totalProductsSold = orderStats.reduce(
+    (sum, item) => sum + item.totalProductSold,
     0
   );
 
-  // Calculate current month vs previous month for trends
-  const currentMonth = new Date().getMonth() + 1;
-  const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-
-  const currentExportedOrders =
-    exportedOrders.find((item) => item.month === currentMonth)
-      ?.exportedOrderCount || 0;
-  const previousExportedOrders =
-    exportedOrders.find((item) => item.month === previousMonth)
-      ?.exportedOrderCount || 0;
-  const exportedOrdersTrend =
-    previousExportedOrders > 0
-      ? ((currentExportedOrders - previousExportedOrders) /
-          previousExportedOrders) *
-        100
-      : 0;
-
-  const currentExports =
-    exportCounts.find((item) => item.month === currentMonth)?.exportCount || 0;
-  const previousExports =
-    exportCounts.find((item) => item.month === previousMonth)?.exportCount || 0;
-  const exportsTrend =
-    previousExports > 0
-      ? ((currentExports - previousExports) / previousExports) * 100
-      : 0;
-
-  const currentReceipts =
-    receiptCounts.find((item) => item.month === currentMonth)?.receiptCount ||
-    0;
-  const previousReceipts =
-    receiptCounts.find((item) => item.month === previousMonth)?.receiptCount ||
-    0;
-  const receiptsTrend =
-    previousReceipts > 0
-      ? ((currentReceipts - previousReceipts) / previousReceipts) * 100
-      : 0;
+  // Pie chart data for value distribution
+  const valueDistributionData = [
+    { name: "Doanh thu đơn hàng", value: totalRevenue, color: "#8884d8" },
+    { name: "Giá trị xuất kho", value: totalExportValue, color: "#82ca9d" },
+    { name: "Giá trị nhập kho", value: totalImportValue, color: "#ffc658" },
+  ];
 
   if (isLoading) {
     return (
@@ -216,98 +241,89 @@ export default function AdminDashBoard() {
 
   return (
     <div className="space-y-6 p-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">
+          Dashboard Kho Hàng
+        </h2>
+        <p className="text-muted-foreground">
+          Tổng quan chi tiết về hoạt động xuất nhập kho và doanh thu
+        </p>
+      </div>
+      {/* Main Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Tổng đơn hàng xuất
+              Tổng doanh thu
             </CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalExportedOrders.toLocaleString()}
+              {formatCurrency(totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground flex items-center">
-              {exportedOrdersTrend >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
-              )}
-              {Math.abs(exportedOrdersTrend).toFixed(1)}% so với tháng trước
+              <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+              Từ {totalOrders} đơn hàng
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tổng lần xuất kho
-            </CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {totalExports.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground flex items-center">
-              {exportsTrend >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
-              )}
-              {Math.abs(exportsTrend).toFixed(1)}% so với tháng trước
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tổng lần nhập kho
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Tổng nhập kho</CardTitle>
             <PackageCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {totalReceipts.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground flex items-center">
-              {receiptsTrend >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
-              )}
-              {Math.abs(receiptsTrend).toFixed(1)}% so với tháng trước
+            <p className="text-xs text-muted-foreground">
+              {formatCurrency(totalImportValue)} •{" "}
+              {totalQuantityImported.toLocaleString()} sản phẩm
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Hiệu suất xuất/nhập
-            </CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Tổng xuất kho</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalReceipts > 0
-                ? ((totalExports / totalReceipts) * 100).toFixed(1)
-                : 0}
-              %
+              {totalExports.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">Tỷ lệ xuất/nhập kho</p>
+            <p className="text-xs text-muted-foreground">
+              {formatCurrency(totalExportValue)} •{" "}
+              {totalQuantityExported.toLocaleString()} sản phẩm
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Sản phẩm đã bán
+            </CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalProductsSold.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Từ {totalOrders} đơn hàng xuất
+            </p>
           </CardContent>
         </Card>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+      ư {/* Charts Section */}
+      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Biểu đồ hoạt động xuất nhập kho</CardTitle>
+            <CardTitle>Biểu đồ hoạt động theo tháng</CardTitle>
             <CardDescription>
-              Thống kê đơn hàng xuất, xuất kho và nhập kho theo tháng
+              Thống kê số lượng giao dịch nhập, xuất kho và đơn hàng
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
@@ -320,37 +336,92 @@ export default function AdminDashBoard() {
                 <Legend />
                 <Line
                   type="monotone"
-                  dataKey="exportedOrders"
+                  dataKey="orders"
                   stroke="#8884d8"
                   strokeWidth={2}
-                  name="Đơn hàng xuất"
+                  name="Đơn hàng"
                 />
                 <Line
                   type="monotone"
                   dataKey="exports"
                   stroke="#82ca9d"
                   strokeWidth={2}
-                  name="Lần xuất kho"
+                  name="Xuất kho"
                 />
                 <Line
                   type="monotone"
                   dataKey="receipts"
                   stroke="#ffc658"
                   strokeWidth={2}
-                  name="Lần nhập kho"
+                  name="Nhập kho"
                 />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Phân bổ giá trị</CardTitle>
+            <CardDescription>Tỷ trọng giá trị các hoạt động</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={valueDistributionData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {valueDistributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+      {/* Value and Quantity Charts */}
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>So sánh xuất/nhập theo tháng</CardTitle>
+            <CardTitle>Biểu đồ giá trị theo tháng</CardTitle>
             <CardDescription>
-              Biểu đồ cột so sánh hoạt động xuất và nhập kho
+              So sánh giá trị nhập kho, xuất kho và doanh thu
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis
+                  tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend />
+                <Bar dataKey="revenue" fill="#8884d8" name="Doanh thu" />
+                <Bar dataKey="exportValue" fill="#82ca9d" name="Giá trị xuất" />
+                <Bar dataKey="importValue" fill="#ffc658" name="Giá trị nhập" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Biểu đồ số lượng theo tháng</CardTitle>
+            <CardDescription>
+              So sánh số lượng sản phẩm nhập, xuất và bán
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -361,41 +432,63 @@ export default function AdminDashBoard() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="exports" fill="#82ca9d" name="Xuất kho" />
-                <Bar dataKey="receipts" fill="#ffc658" name="Nhập kho" />
+                <Bar dataKey="quantityImported" fill="#ffc658" name="SL nhập" />
+                <Bar dataKey="quantityExported" fill="#82ca9d" name="SL xuất" />
+                <Bar dataKey="productsSold" fill="#8884d8" name="SL bán" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Thống kê chi tiết</CardTitle>
-            <CardDescription>Dữ liệu chi tiết theo từng tháng</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 max-h-[300px] overflow-y-auto">
-              {chartData.map((data, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="font-medium">{data.month}</div>
-                  <div className="flex space-x-4 text-sm">
-                    <span className="text-blue-600">
-                      ĐH: {data.exportedOrders}
-                    </span>
-                    <span className="text-green-600">Xuất: {data.exports}</span>
-                    <span className="text-yellow-600">
-                      Nhập: {data.receipts}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
+      {/* Detailed Stats Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thống kê chi tiết theo tháng</CardTitle>
+          <CardDescription>
+            Dữ liệu chi tiết về tất cả các hoạt động
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Tháng</th>
+                  <th className="text-right p-2">Đơn hàng</th>
+                  <th className="text-right p-2">Doanh thu</th>
+                  <th className="text-right p-2">Xuất kho</th>
+                  <th className="text-right p-2">Nhập kho</th>
+                  <th className="text-right p-2">SL bán</th>
+                  <th className="text-right p-2">SL xuất</th>
+                  <th className="text-right p-2">SL nhập</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartData.map((data, index) => (
+                  <tr key={index} className="border-b hover:bg-muted/50">
+                    <td className="p-2 font-medium">{data.month}</td>
+                    <td className="p-2 text-right">{data.orders}</td>
+                    <td className="p-2 text-right">
+                      {formatCurrency(data.revenue)}
+                    </td>
+                    <td className="p-2 text-right">{data.exports}</td>
+                    <td className="p-2 text-right">{data.receipts}</td>
+                    <td className="p-2 text-right">
+                      {data.productsSold.toLocaleString()}
+                    </td>
+                    <td className="p-2 text-right">
+                      {data.quantityExported.toLocaleString()}
+                    </td>
+                    <td className="p-2 text-right">
+                      {data.quantityImported.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
