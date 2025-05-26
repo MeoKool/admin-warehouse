@@ -534,9 +534,6 @@ export default function InventoryPage() {
                     ).length
                   }
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Lô hàng sắp hết hạn trong 3 tháng tới
-                </p>
               </CardContent>
             </Card>
           </div>
