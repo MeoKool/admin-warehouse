@@ -202,6 +202,8 @@ export function ExportDetail({
         return "Xuất bán hàng";
       case "PendingTransfer":
         return "Chờ điều phối";
+      case "AvailableExport":
+        return "Sẵn hàng";
       default:
         return importType;
     }
