@@ -354,10 +354,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-        Trang Quản Trị Tổng Quan
-      </h2>
-
       {/* Section 1: Account Overview */}
       <section>
         <h3 className="text-xl md:text-2xl font-semibold tracking-tight mb-4">
@@ -409,13 +405,13 @@ export default function AdminDashboard() {
                 <div className="text-base font-semibold">
                   {formatNumber(accountData.totalAgencies)} Đại lý
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-base font-semibold">
                   {formatNumber(accountData.totalSalesManagers)} Quản lý bán
                   hàng
-                </p>
-                <p className="text-xs text-muted-foreground">
+                </div>
+                <div className="text-base font-semibold">
                   {formatNumber(accountData.totalWarehouseManagers)} Quản lý kho
-                </p>
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -429,9 +425,6 @@ export default function AdminDashboard() {
                 <div className="text-2xl font-bold">
                   {formatNumber(accountData.unverifiedEmailCount)}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Cần chú ý xác minh
-                </p>
               </CardContent>
             </Card>
           </div>
