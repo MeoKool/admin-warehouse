@@ -225,7 +225,7 @@ export function IncomingTransferDetailsDialog({
                 variant="default"
                 onClick={handleApprove}
                 disabled={isApproving}
-                className="bg-primary"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {isApproving ? (
                   <>
