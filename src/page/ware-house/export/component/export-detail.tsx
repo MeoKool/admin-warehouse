@@ -426,7 +426,7 @@ export function ExportDetail({
                         : ""
                     }`}
                   >
-                    {exportData.totalAmount.toLocaleString()} VNĐ
+                    {exportData.totalAmount.toLocaleString()} đ
                   </TableCell>
                 </TableRow>
                 {exportData.discount > 0 && (
@@ -445,7 +445,7 @@ export function ExportDetail({
                       Tổng tiền sau giảm giá:
                     </TableCell>
                     <TableCell className="text-right font-bold">
-                      {exportData.finalPrice.toLocaleString()} VNĐ
+                      {exportData.finalPrice.toLocaleString()} đ
                     </TableCell>
                   </TableRow>
                 )}
