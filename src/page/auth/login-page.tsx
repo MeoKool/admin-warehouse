@@ -130,7 +130,7 @@ export default function LoginPage() {
       console.error("Login error:", error);
       toast.error(
         error.response?.data?.message ||
-        "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
       );
     } finally {
       setIsLoading(false);
@@ -232,21 +232,17 @@ export default function LoginPage() {
               <div className="p-2.5 bg-white/20 rounded-xl shadow-lg">
                 <Warehouse className="h-8 w-8" />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                WarehouseManager
-              </h1>
             </div>
 
             <h2
               className={cn(
-                "text-3xl lg:text-4xl xl:text-5xl font-bold mb-6 leading-tight transition-all duration-1000 delay-300",
+                "text-3xl lg:text-3xl xl:text-4xl font-bold mb-6 leading-tight transition-all duration-1000 delay-300",
                 mounted
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-8"
               )}
             >
-              Hệ thống quản lý kho{" "}
-              <span className="text-cyan-300">thông minh</span>
+              Hệ thống quản lý kho
             </h2>
 
             <p
