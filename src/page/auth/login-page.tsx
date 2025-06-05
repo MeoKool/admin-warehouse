@@ -30,7 +30,6 @@ import {
 import { toast } from "sonner";
 import authService from "@/services/auth-service";
 import { Checkbox } from "@/components/ui/checkbox";
-import { jwtDecode } from "jwt-decode";
 import { cn } from "@/lib/utils";
 
 // Form schema for validation
@@ -126,11 +125,12 @@ export default function LoginPage() {
           localStorage.removeItem("Role");
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(
         error.response?.data?.message ||
-          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
+        "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
       );
     } finally {
       setIsLoading(false);
