@@ -103,11 +103,9 @@ export default function LoginPage() {
 
       // Store token and role
       if (data.rememberMe) {
-        localStorage.setItem("userId", userId);
         localStorage.setItem("token", token);
         localStorage.setItem("Role", response.token.roleId.toString());
       } else {
-        localStorage.setItem("userId", userId);
         localStorage.setItem("token", token);
         localStorage.setItem("Role", response.token.roleId.toString());
       }
