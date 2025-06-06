@@ -40,7 +40,6 @@ import { useNavigate } from "react-router-dom";
 
 // Interface cho chi tiết phiếu xuất
 interface ExportReceiptDetailInterface {
-  // Renamed to avoid conflict with component name
   warehouseProductId: number;
   productId: number;
   productName: string;
@@ -54,7 +53,7 @@ interface ExportReceiptDetailInterface {
   discount: number;
   finalPrice: number;
   reason?: string;
-  productCode: string;
+  productCode?: string;
 }
 
 // Interface cho props của component
@@ -94,7 +93,6 @@ export function ExportDetail({
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  // const [selectedDetail, setSelectedDetail] = useState<ExportReceiptDetailInterface | null>(null); // Not actively used for main actions
 
   const navigate = useNavigate();
 
