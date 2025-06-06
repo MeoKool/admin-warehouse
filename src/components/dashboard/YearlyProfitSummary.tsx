@@ -197,7 +197,7 @@ export function YearlyProfitSummary({ onDataChange }: YearlyProfitSummaryProps) 
                                     dataKey="value"
                                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
                                 >
-                                    {getChartData().map((entry, index) => (
+                                    {getChartData().map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
