@@ -99,12 +99,12 @@ export function AccountOverview() {
 
     return (
         <>
-            <Card>
+            <Card className="bg-blue-50 border-blue-100">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                         Tổng Số Tài Khoản
                     </CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <Users className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
@@ -116,12 +116,12 @@ export function AccountOverview() {
                     </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-green-50 border-green-100">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                         Tổng Số Đại Lý
                     </CardTitle>
-                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <Building className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
@@ -133,12 +133,12 @@ export function AccountOverview() {
                     </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-purple-50 border-purple-100">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                         Tài Khoản Đăng Ký
                     </CardTitle>
-                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                    <ClipboardList className="h-4 w-4 text-purple-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
@@ -151,12 +151,12 @@ export function AccountOverview() {
                     </p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-orange-50 border-orange-100">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                         Email Chưa Xác Thực
                     </CardTitle>
-                    <MailWarning className="h-4 w-4 text-muted-foreground" />
+                    <MailWarning className="h-4 w-4 text-orange-500" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">
