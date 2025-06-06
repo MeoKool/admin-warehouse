@@ -7,15 +7,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Users,
-  Building,
+
   PackagePlus, // For Imports
   PackageMinus, // For Exports
   DollarSign,
   TrendingUp,
   TrendingDown,
-  ClipboardList,
-  MailWarning,
+
   PieChartIcon,
 } from "lucide-react";
 import {
@@ -33,21 +31,10 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { AccountOverview } from "@/components/dashboard/AccountOverview";
 
 //region API Data Interfaces
-interface AccountDashboardData {
-  totalAccounts: number;
-  activeAccounts: number;
-  inactiveAccounts: number;
-  totalAgencies: number;
-  totalSalesManagers: number;
-  totalWarehouseManagers: number;
-  totalRegisterAccounts: number;
-  approvedRegisterAccounts: number;
-  pendingRegisterAccounts: number;
-  canceledRegisterAccounts: number;
-  unverifiedEmailCount: number;
-}
+
 
 interface DailySummaryBase {
   date: string; // Assuming ISO string like "2025-05-25T00:00:00"
@@ -110,9 +97,7 @@ interface ApiArrayResponse<T> {
 //endregion
 
 export default function AdminDashboard() {
-  const [accountData, setAccountData] = useState<AccountDashboardData | null>(
-    null
-  );
+
   const [exportSummary, setExportSummary] =
     useState<WarehouseExportSummary | null>(null);
   const [receiptSummary, setReceiptSummary] =
@@ -137,15 +122,11 @@ export default function AdminDashboard() {
       setError(null);
       try {
         const [
-          accountRes,
           exportSummaryRes,
           receiptSummaryRes,
           monthlyProfitRes,
           yearlyProfitRes,
         ] = await Promise.all([
-          fetch("https://minhlong.mlhr.org/api/admin/account-dashboard", {
-            headers: getAuthHeaders(),
-          }),
           fetch(
             "https://minhlong.mlhr.org/api/WarehouseExport/dashboard/export-summary",
             {
@@ -172,10 +153,7 @@ export default function AdminDashboard() {
           ),
         ]);
 
-        if (!accountRes.ok)
-          throw new Error(
-            `Failed to fetch account dashboard: ${accountRes.statusText}`
-          );
+
         if (!exportSummaryRes.ok)
           throw new Error(
             `Failed to fetch export summary: ${exportSummaryRes.statusText}`
@@ -193,7 +171,6 @@ export default function AdminDashboard() {
             `Failed to fetch yearly profit: ${yearlyProfitRes.statusText}`
           );
 
-        const accountJson: AccountDashboardData = await accountRes.json(); // This API returns the object directly
         const exportSummaryJson: ApiObjectResponse<WarehouseExportSummary> =
           await exportSummaryRes.json();
         const receiptSummaryJson: ApiObjectResponse<WarehouseReceiptSummary> =
@@ -203,8 +180,7 @@ export default function AdminDashboard() {
         const yearlyProfitJson: ApiObjectResponse<YearlyProfitData> =
           await yearlyProfitRes.json();
 
-        // Assuming the account API response is the direct data object, not nested under "data"
-        setAccountData(accountJson);
+
 
         if (!exportSummaryJson.success)
           throw new Error("Export summary API returned unsuccessful response");
@@ -323,17 +299,17 @@ export default function AdminDashboard() {
 
   const yearlyProfitPieData = yearlyProfit
     ? [
-        {
-          name: "Tổng chi phí nhập",
-          value: yearlyProfit.totalImportCost,
-          color: "#ff8042",
-        },
-        {
-          name: "Tổng doanh thu xuất",
-          value: yearlyProfit.totalExportRevenue,
-          color: "#00C49F",
-        },
-      ]
+      {
+        name: "Tổng chi phí nhập",
+        value: yearlyProfit.totalImportCost,
+        color: "#ff8042",
+      },
+      {
+        name: "Tổng doanh thu xuất",
+        value: yearlyProfit.totalExportRevenue,
+        color: "#00C49F",
+      },
+    ]
     : [];
 
   if (isLoading) {
@@ -359,76 +335,9 @@ export default function AdminDashboard() {
         <h3 className="text-xl md:text-2xl font-semibold tracking-tight mb-4">
           Tổng Quan Tài Khoản
         </h3>
-        {accountData && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Tổng Tài Khoản
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(accountData.totalAccounts)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatNumber(accountData.activeAccounts)} đang hoạt động
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Tài Khoản Đăng Ký
-                </CardTitle>
-                <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(accountData.totalRegisterAccounts)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatNumber(accountData.approvedRegisterAccounts)} đã duyệt,{" "}
-                  {formatNumber(accountData.pendingRegisterAccounts)} chờ duyệt
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Phân Loại Tài Khoản
-                </CardTitle>
-                <Building className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-base font-semibold">
-                  {formatNumber(accountData.totalAgencies)} Đại lý
-                </div>
-                <div className="text-base font-semibold">
-                  {formatNumber(accountData.totalSalesManagers)} Quản lý bán
-                  hàng
-                </div>
-                <div className="text-base font-semibold">
-                  {formatNumber(accountData.totalWarehouseManagers)} Quản lý kho
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Email Chưa Xác Minh
-                </CardTitle>
-                <MailWarning className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatNumber(accountData.unverifiedEmailCount)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <AccountOverview />
+        </div>
       </section>
 
       {/* Section 2: Warehouse & Profit Summary */}
@@ -485,29 +394,26 @@ export default function AdminDashboard() {
                     Lợi Nhuận Năm Nay
                   </CardTitle>
                   <DollarSign
-                    className={`h-4 w-4 ${
-                      yearlyProfit.profitAmount >= 0
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
+                    className={`h-4 w-4 ${yearlyProfit.profitAmount >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                      }`}
                   />
                 </CardHeader>
                 <CardContent>
                   <div
-                    className={`text-2xl font-bold ${
-                      yearlyProfit.profitAmount >= 0
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
+                    className={`text-2xl font-bold ${yearlyProfit.profitAmount >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                      }`}
                   >
                     {formatCurrency(yearlyProfit.profitAmount)}
                   </div>
                   <p
-                    className={`text-xs ${
-                      yearlyProfit.profitAmount >= 0
-                        ? "text-green-500"
-                        : "text-red-500"
-                    } flex items-center`}
+                    className={`text-xs ${yearlyProfit.profitAmount >= 0
+                      ? "text-green-500"
+                      : "text-red-500"
+                      } flex items-center`}
                   >
                     {yearlyProfit.profitAmount >= 0 ? (
                       <TrendingUp className="h-3 w-3 mr-1" />
@@ -803,18 +709,16 @@ export default function AdminDashboard() {
                       {formatCurrency(item.exportRevenue)}
                     </td>
                     <td
-                      className={`p-2 text-right font-semibold ${
-                        item.profit >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
+                      className={`p-2 text-right font-semibold ${item.profit >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
                     >
                       {formatCurrency(item.profit)}
                     </td>
                     <td
-                      className={`p-2 text-right ${
-                        item.profitPercentage >= 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }`}
+                      className={`p-2 text-right ${item.profitPercentage >= 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                        }`}
                     >
                       {item.profitPercentage.toFixed(2)}%
                     </td>
