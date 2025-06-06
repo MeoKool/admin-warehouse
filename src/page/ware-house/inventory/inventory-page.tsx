@@ -481,7 +481,12 @@ export default function InventoryPage() {
       setIsLoading(false);
     }
   };
-
+  function getTodayVN() {
+    const now = new Date();
+    // Chuyển sang VN (GMT+7)
+    now.setHours(now.getHours() + 7 - now.getTimezoneOffset() / 60);
+    return now.toISOString().slice(0, 10);
+  }
   return (
     <div className="space-y-6" style={{ maxHeight: "80vh", overflowY: "auto" }}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1261,6 +1266,7 @@ export default function InventoryPage() {
               <Input
                 type="date"
                 value={editDateOfManufacture}
+                max={getTodayVN()}
                 onChange={(e) => setEditDateOfManufacture(e.target.value)}
               />
             </div>

@@ -54,6 +54,7 @@ interface ExportReceiptDetailInterface {
   discount: number;
   finalPrice: number;
   reason?: string;
+  productCode: string;
 }
 
 // Interface cho props của component
@@ -386,7 +387,7 @@ export function ExportDetail({
                     {" "}
                     {/* More robust key */}
                     <TableCell className="font-medium">
-                      {item.productId}
+                      {item.productCode}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
@@ -511,8 +512,7 @@ export function ExportDetail({
           <DialogHeader>
             <DialogTitle>Duyệt đơn xuất kho</DialogTitle>
             <DialogDescription>
-              Xác nhận duyệt phiếu xuất này? (ID:{" "}
-              {exportData.exportWarehouseReceiptId})
+              Xác nhận duyệt phiếu xuất này?
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -537,7 +537,7 @@ export function ExportDetail({
                 Tổng giá trị
               </Label>
               <div className="col-span-3">
-                {exportData.totalAmount.toLocaleString()} đ
+                {exportData.finalPrice.toLocaleString()} đ
               </div>
             </div>
           </div>
