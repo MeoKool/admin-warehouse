@@ -228,7 +228,8 @@ export function IncomingTransferDetailsDialog({
           </Button>
 
           {transfer.status.toLowerCase() !== "completed" &&
-            transfer.status.toLowerCase() !== "approved" && (
+            transfer.status.toLowerCase() !== "approved" &&
+            transfer.status.toLowerCase() !== "canceled" && (
               <Button
                 variant="default"
                 onClick={handleApprove}
