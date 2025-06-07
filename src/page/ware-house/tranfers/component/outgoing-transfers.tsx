@@ -87,7 +87,7 @@ export function OutgoingTransfers({
       bgColor = "bg-blue-100";
       hoverColor = "hover:bg-blue-200";
       label = "Đã phê duyệt";
-    } else if (statusLower === "cancelled") {
+    } else if (statusLower === "canceled") {
       color = "text-red-800";
       bgColor = "bg-red-100";
       hoverColor = "hover:bg-red-200";
