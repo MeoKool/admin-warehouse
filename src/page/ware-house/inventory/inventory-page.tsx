@@ -413,8 +413,8 @@ export default function InventoryPage() {
     if (!selectedBatch) return;
 
     const marginValue = Number.parseFloat(profitMargin);
-    if (isNaN(marginValue) || marginValue <= 0 || marginValue > 100) {
-      toast.error("Tỷ lệ lợi nhuận phải là số dương và không vượt quá 100%");
+    if (isNaN(marginValue) || marginValue <= 0) {
+      toast.error("Tỷ lệ lợi nhuận phải là số dương");
       return;
     }
 
