@@ -233,10 +233,6 @@ export function OutgoingTransferDetailsDialog({
         </div>
 
         <DialogFooter className="flex flex-col sm:flex-row justify-between sm:justify-end gap-2">
-          <Button variant="destructive" onClick={() => onOpenChange(false)}>
-            Đóng
-          </Button>
-
           {transfer.status.toLowerCase() === "approved" && (
             <Button
               variant="outline"
@@ -257,6 +253,9 @@ export function OutgoingTransferDetailsDialog({
               )}
             </Button>
           )}
+          <Button variant="destructive" onClick={() => onOpenChange(false)}>
+            Đóng
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
