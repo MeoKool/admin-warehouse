@@ -222,6 +222,7 @@ export function ReturnRequestsList({
       } else {
         throw new Error("Không thể duyệt yêu cầu trả hàng");
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error approving return:", error);
       toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
@@ -255,6 +256,7 @@ export function ReturnRequestsList({
       } else {
         throw new Error("Không thể từ chối yêu cầu trả hàng");
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error rejecting return:", error);
       toast.error(error.response?.data?.message || "Đã xảy ra lỗi");
@@ -407,7 +409,6 @@ export function ReturnRequestsList({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[180px]">Mã phiếu</TableHead>
-                <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead className="w-[150px]">Ngày tạo</TableHead>
                 {!isTablet && <TableHead>Sản phẩm</TableHead>}
                 <TableHead className="text-center">Trạng thái</TableHead>
@@ -447,14 +448,7 @@ export function ReturnRequestsList({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="text-xs font-mono">
-                          {request.returnWarehouseReceiptId}
-                        </span>
-                      </div>
-                    </TableCell>
+
                     <TableCell>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -555,24 +549,24 @@ export function ReturnRequestsList({
 
             {currentPage <
               Math.ceil(returnRequests.length / itemsPerPage) - 2 && (
-              <>
-                <PaginationItem>
-                  <span>...</span>
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationLink
-                    onClick={() =>
-                      setCurrentPage(
-                        Math.ceil(returnRequests.length / itemsPerPage)
-                      )
-                    }
-                    className="cursor-pointer"
-                  >
-                    {Math.ceil(returnRequests.length / itemsPerPage)}
-                  </PaginationLink>
-                </PaginationItem>
-              </>
-            )}
+                <>
+                  <PaginationItem>
+                    <span>...</span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() =>
+                        setCurrentPage(
+                          Math.ceil(returnRequests.length / itemsPerPage)
+                        )
+                      }
+                      className="cursor-pointer"
+                    >
+                      {Math.ceil(returnRequests.length / itemsPerPage)}
+                    </PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
 
             <PaginationItem>
               <PaginationNext
@@ -586,7 +580,7 @@ export function ReturnRequestsList({
                 }
                 className={
                   currentPage ===
-                  Math.ceil(returnRequests.length / itemsPerPage)
+                    Math.ceil(returnRequests.length / itemsPerPage)
                     ? "pointer-events-none opacity-50"
                     : "cursor-pointer"
                 }
